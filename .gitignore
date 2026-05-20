@@ -1,0 +1,15 @@
+# Backend
+backend/target/
+backend/.env
+backend/*.jar
+
+# Frontend
+frontend/node_modules/
+frontend/.env
+frontend/build/
+frontend/dist/
+
+# IDE
+.idea/
+.vscode/
+*.iml
