@@ -1,6 +1,7 @@
 package com.minhtung.hackathon.entity;
 
 
+import com.minhtung.hackathon.enums.Role;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -24,11 +25,24 @@ public class User {
     private boolean active =false ;
 
     @Column
-    private String token ;
+    private String token ; //verify code
 
     @Column
     private LocalDateTime expiredAt;
 
+    //Role moi them User/Lecturer/Admin
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role = Role.USER ;
+
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
 
     public boolean isExpired() {
         if (expiredAt == null) return true;

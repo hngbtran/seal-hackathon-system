@@ -1,6 +1,8 @@
 package com.minhtung.hackathon.controller;
 
 
+import com.minhtung.hackathon.dto.LoginRequest;
+import com.minhtung.hackathon.dto.LoginResponse;
 import com.minhtung.hackathon.dto.RegisterRequest;
 import com.minhtung.hackathon.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,6 +37,23 @@ public class AuthController {
     public ResponseEntity<String> verify(@RequestParam String token) {
         String result = authService.verifyEmail(token);
         return ResponseEntity.ok(result);
+    }
+
+   //login
+    @Operation(
+            summary = "Dang nhap",
+            description = "Tra ve JWT token va role (USER / LECTURER / ADMIN). " +
+                    "Dung token nay trong header: Authorization: Bearer <token>"
+    )
+
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest req){
+        LoginResponse resp = authService.login(req);
+        if(resp.getToken() == null){
+            return ResponseEntity.status(401).body(resp);
+
+        }
+        return ResponseEntity.ok(resp);
     }
 }
 

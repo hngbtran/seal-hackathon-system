@@ -1,8 +1,12 @@
 package com.minhtung.hackathon.service;
 
 
+import com.minhtung.hackathon.dto.LoginRequest;
+import com.minhtung.hackathon.dto.LoginResponse;
 import com.minhtung.hackathon.entity.User;
+import com.minhtung.hackathon.enums.Role;
 import com.minhtung.hackathon.repository.UserRepository;
+import com.minhtung.hackathon.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,8 +22,11 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder ;
     private final EmailService emailService ;
+    private final JwtUtil jwtUtil;
 
 
+
+    // nếu không verify thi sau .... xoa
     public String register(String username , String email , String password){
         if(userRepository.existsByEmail(email)){
             return "Email nay da duoc su dung " ;
@@ -32,6 +39,7 @@ public class AuthService {
         user.setActive(false);//chua an xac nhan
         user.setToken(UUID.randomUUID().toString());
         user.setExpiredAt(LocalDateTime.now().plusMinutes(15));
+        user.setRole(Role.USER);
         userRepository.save(user);
 
         boolean sent = emailService.sendVerificationEmail(email,user.getToken()) ;
@@ -47,24 +55,42 @@ public class AuthService {
         User user = userRepository.findByToken(token).orElse(null);
 
         if(user == null){
-            return "Token khong hop le" ;
+            return "Token khong hop le " ;
 
         }
         if (user.isExpired()){
             userRepository.delete(user);
             return "Link da het han . Vui long dang ki lai" ;
-
         }
-        User users = new User() ;
-        users.setActive(true);
-        users.setToken(null);
-        users.setExpiredAt(null);
+
+        user.setActive(true);
+        user.setToken(null);
+        user.setExpiredAt(null);
         userRepository.save(user) ;
 
         return "Tai khoan da duoc kich hoat .Ban co the dang nhap ngay " ;
     }
-    private String hashPassword(String password) {
-        return password;
+    public LoginResponse login(LoginRequest req){
+        User user = userRepository.findByUsername((req.getUsername())).orElse(null) ;
+
+        if(user == null){
+            return new LoginResponse(null,null,null,"tai khoan khong ton tai ");
+
+        }
+        if(!user.isActive()){
+            return new LoginResponse(null,null,null,"tai khoan chua duoc kich hoat email ");
+        }
+        if (!req.getPassword().equals(user.getPassword())) {
+            return new LoginResponse(null, null, null, "Mat khau khong chinh xac");
+        }
+        String jwt = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
+
+        return new LoginResponse(
+                jwt,
+                user.getRole().name(),
+                user.getUsername(),
+                "Dang nhap thanh cong"
+        );
     }
 
 }
