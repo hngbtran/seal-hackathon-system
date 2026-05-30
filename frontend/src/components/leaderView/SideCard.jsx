@@ -11,14 +11,14 @@ function SideCard({
   return (
     <div className={`${styles.card} ${styles[color]}`}>
 
-      {/* Header */}
+      
       <div className={styles.header}>
         <span className={styles.icon}>{icon}</span>
         <h2 className={styles.title}>{title}</h2>
         <span className={`${styles.badge} ${styles[color]}`}>{count}</span>
       </div>
 
-      {/* Danh sách */}
+      
       {items.length === 0 ? (
         <p className={styles.empty}>{emptyText}</p>
       ) : (

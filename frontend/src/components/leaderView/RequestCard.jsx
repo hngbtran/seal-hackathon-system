@@ -1,12 +1,17 @@
-import { EnvelopeSimple } from '@phosphor-icons/react'
+import { useState } from 'react'
 import SideCard from './SideCard'
 import Button from '../shared/Button'
+import RequestDetailModal from './RequestDetailModal'
+import { EnvelopeSimple } from '@phosphor-icons/react'
 
-function RequestCard({ requests, onViewDetail }) {
+function RequestCard({ requests, onAccept, onReject }) {
+  const [selectedRequest, setSelectedRequest] = useState(null)
+
   return (
-    <SideCard
+    <>
+      <SideCard
       color="green"
-      icon={<EnvelopeSimple size={32}/>}
+      icon={<EnvelopeSimple size={32} />}
       title="Yêu cầu vào đội"
       count={requests.length}
       items={requests}
@@ -17,10 +22,18 @@ function RequestCard({ requests, onViewDetail }) {
           labelSize={16}
           variant="outline"
           color='green'
-          onClick={() => onViewDetail(item)}
+          onClick={() => setSelectedRequest(item)}
         />
       )}
     />
+
+    <RequestDetailModal
+        request={selectedRequest}
+        onAccept={onAccept}
+        onReject={onReject}
+        onClose={() => setSelectedRequest(null)}
+      />
+    </>
   )
 }
 
