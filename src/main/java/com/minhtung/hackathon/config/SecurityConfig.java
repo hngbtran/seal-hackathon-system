@@ -1,11 +1,9 @@
 package com.minhtung.hackathon.config;
 
 import com.minhtung.hackathon.security.JwtAuthFilter;
-import jakarta.servlet.Filter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -14,7 +12,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity           // ✅ bật @PreAuthorize trên từng method
@@ -22,7 +19,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
 
-    private final JwtAuthFilter jwtAuthFilter ;
+    private final JwtAuthFilter jwtAuthFilter;
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -30,46 +28,44 @@ public class SecurityConfig {
     }
 
 
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
+        http
+                .csrf(csrf -> csrf.disable())
 
-        @Bean
-        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
 
-            http
-                    .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
 
-                    .sessionManagement(session ->
-                            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                    )
+                        // Swagger
+                        .requestMatchers(
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/v3/api-docs",
+                                "/webjars/**"
+                        ).permitAll()
 
-                    .authorizeHttpRequests(auth -> auth
+                        // Auth
+                        .requestMatchers("/auth/**").permitAll()
 
-                            // Swagger
-                            .requestMatchers(
-                                    "/swagger-ui.html",
-                                    "/swagger-ui/**",
-                                    "/v3/api-docs/**",
-                                    "/v3/api-docs",
-                                    "/webjars/**"
-                            ).permitAll()
+                        // Role
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/lecturer/**")
+                        .hasAnyRole("ADMIN", "LECTURER")
 
-                            // Auth
-                            .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/user/**")
+                        .hasAnyRole("ADMIN", "LECTURER", "USER")
 
-                            // Role
-                            .requestMatchers("/admin/**").hasRole("ADMIN")
-                            .requestMatchers("/lecturer/**")
-                            .hasAnyRole("ADMIN", "LECTURER")
+                        .anyRequest().authenticated()
+                )
 
-                            .requestMatchers("/user/**")
-                            .hasAnyRole("ADMIN", "LECTURER", "USER")
+                .addFilterBefore(jwtAuthFilter,
+                        UsernamePasswordAuthenticationFilter.class);
 
-                            .anyRequest().authenticated()
-                    )
-
-                    .addFilterBefore(jwtAuthFilter,
-                            UsernamePasswordAuthenticationFilter.class);
-
-            return http.build();
-        }
+        return http.build();
     }
+}

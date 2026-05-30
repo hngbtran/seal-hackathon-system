@@ -27,7 +27,7 @@ public class AuthService {
 
 
     // nếu không verify thi sau .... xoa
-    public String register(String username , String email , String password){
+    public String register(String username , String email , String  password){
         if(userRepository.existsByEmail(email)){
             return "Email nay da duoc su dung " ;
         }
