@@ -1,0 +1,20 @@
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+
+    min-height: 100vh;
+
+    background-color: var(--color-bg-blue);
+
+    padding: 1em;
+}
+
+.body {
+    display: flex;
+    flex: 1;
+}
+
+.content {
+    padding: 2em;
+}
