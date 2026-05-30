@@ -1,6 +1,7 @@
 import styles from './Button.module.css'
 
 function Button({
+    className = '',
     label,
     labelSize = 20,
     color = 'blue', // 'blue', 'green', 'orange'
@@ -16,7 +17,7 @@ function Button({
     return (
         <button
             type={type}
-            className={`${styles.btn} ${styles[variant]} ${styles[color]}`}
+            className={`${styles.btn} ${styles[variant]} ${styles[color]} ${className}`}
             onClick={onClick}
             disabled={disabled}
         >
@@ -26,7 +27,7 @@ function Button({
 
             {Icon && iconPosition === 'left' && (
                 <span className={styles.icon}>
-                    <Icon size={iconSize} weight={iconWeight} />
+                    <Icon size={iconSize} weight={iconWeight}/>
                 </span>
             )}
 
