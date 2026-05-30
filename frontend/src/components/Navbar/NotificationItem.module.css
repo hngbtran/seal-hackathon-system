@@ -8,6 +8,7 @@
   padding: 1em;
   
   cursor: pointer;
+
 }
 
 .item:hover {
@@ -30,12 +31,12 @@
 
 .message {
   margin: 0;
-  font-size: 14px;
+  font-size: 0.8rem;
   color: var(--color-text-primary);
 }
 
 .time {
-  font-size: 12px;
+  font-size: 0.66rem;
   color: var(--color-text-secondary);
 }
 

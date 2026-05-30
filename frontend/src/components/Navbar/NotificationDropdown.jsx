@@ -23,6 +23,7 @@ function NotificationDropdown() {
       <button
         className={styles.trigger}
         onClick={() => setIsOpen(!isOpen)}
+        type='button'
       >
         <Bell size={36} color="white" weight='fill' />
       </button>
