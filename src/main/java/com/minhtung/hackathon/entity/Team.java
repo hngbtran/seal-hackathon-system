@@ -18,9 +18,9 @@ public class Team {
 
     @Column(name = "Status", length = 20 , nullable = false)
     private TeamStatus status = TeamStatus.OPEN;
-    @Column(name = "CreateAt" , nullable = false , unique = true)
+    @Column(name = "CreateAt" , nullable = false )
     private LocalDate createAt = LocalDate.now() ;
-    @Column(name = "LeaderId",length =  10 , unique = true)
+    @Column(name = "LeaderId",length =  10 )
     private int leaderID ;
    @Column(name = "InviteCode",nullable = false,unique = true)
 

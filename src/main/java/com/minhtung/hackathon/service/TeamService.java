@@ -43,7 +43,7 @@ public class TeamService {
           throw new RuntimeException("tên đội không thể lớn hơn 30 kí tự ");
       }
 
-      if(memberRepository.existsMemberIdAndStatus(leaderId,true)){
+      if(memberRepository.existsByMemberIDAndStatus(leaderId,true)){
           throw new RuntimeException("Bạn thuộc team rồi nên không thể tham gia đăng kí vào team khác") ;
       }
 
@@ -108,13 +108,13 @@ public class TeamService {
         }
 
         //kiem tra xem ban co thuoc team nao chua
-        if (memberRepository.exitByTeamIdAndMemberIDAndStatus(team.getId(), userId, true)) {
+        if (memberRepository.existsByTeamIdAndMemberIDAndStatus(team.getId(), userId, true)) {
             ;
 
             return "ban da thuoc doi khac roi" + team.getName();
         }
         //yeu cau roi doi truoc khi muon tham gia
-        if (memberRepository.existsMemberIdAndStatus(userId,true)) {
+        if (memberRepository.existsByMemberIDAndStatus(userId,true)) {
             return "ban nen roi doi " + team.getName() + "truoc khi tham gia ";
 
         }
@@ -162,7 +162,7 @@ public class TeamService {
                 return "đội nay không còn nhận thành viên nữa";
 
             }
-            if (memberRepository.exitByTeamIdAndMemberIDAndStatus(teamId, userId, true)) {
+            if (memberRepository.existsByTeamIdAndMemberIDAndStatus(teamId, userId, true)) {
                 ;
                 return "ban da o trong doi khac roi";
             }
@@ -171,7 +171,7 @@ public class TeamService {
 
             }
             //khuc nay la do leader duyet
-            if (teamRequestRepository.exitsBySenderAndTeamIdAndTypeAndStatus(userId, teamId, RequestType.JOIN_REQUEST, RequestStatus.PENDING)){
+            if (teamRequestRepository.existsBySenderIdAndTeamIdAndTypeAndStatus(userId, teamId, RequestType.JOIN_REQUEST, RequestStatus.PENDING)){
                 ;
             return " bạn đã  yeu cau  leader duyệt";
         }
@@ -207,7 +207,7 @@ public class TeamService {
                 teamRequestRepository.save(req);
                 return "doi cua bạn da du va khong con nhan thanh vien nua" ;
             }
-            if(memberRepository.existsMemberIdAndStatus(userId,true)){
+            if(memberRepository.existsByMemberIDAndStatus(userId,true)){
                 return "ban thuoc team khac roi can out de vao nhom khac" ;
             }
            memberRepository.save(new Member(MemberRole.MEMBER,true,req.getTeamId(),userId));
@@ -252,7 +252,142 @@ public class TeamService {
     }
 
 
+    //thanh vie  gui leave_request xin roi doi
+    //leader can duyet
+    //leader khong the tu y roi doi (giai tán nhóm)
+    @Transactional
+    public String requestLeave(Long teamID , int userId) {
+        Member member = memberRepository.findByTeamIdAndMemberID(teamID, userId).orElse(null);
+        if (member == null || !member.isStatus()) {
+            return "ban khong thuoc doi nay ";
+        }
+        if (member.getRole() == MemberRole.LEADER) {
+            return "ban la leader nen khong the roi doi duoc ";
+        }
+        Team team = teamRepository.findById(teamID).orElse(null);
+        if (team == null) {
+            return "khong tim thay doi nay";
+        }
+        if (team.getStatus() == TeamStatus.APPROVED) {
+            return "đội của bạn đã được duyệt rôi , không thể rời đội";
+        }
+        if (teamRequestRepository.existsBySenderIdAndTeamIdAndTypeAndStatus(userId, teamID, RequestType.LEAVE_REQUEST, RequestStatus.PENDING)) {
 
+            return "bạn đã gửi yêu  cầu xin ròi nhóm , cần được admin duyệt ";
+        }
+        teamRequestRepository.save(new TeamRequest(userId, team.getLeaderID(), teamID, RequestType.LEAVE_REQUEST));
+
+        return "đã gửi yêu cầu rời đội , chờ leader duyệt ";
+
+    }
+
+        //8 day la ham dung de leadder duyet vuec leave_request trong team
+
+    @Transactional
+    public String respondToLeaveRequest(Long requestId , boolean acp , int leaderId){
+        TeamRequest req = teamRequestRepository.findById(requestId).orElse(null);
+        if(req == null){
+            return "không tìm thấy yêu câu rời đội" ;
+        }
+        if(req.getType() !=  RequestType.LEAVE_REQUEST){
+            return "đây không phải yêu cầu rời đội" ;
+        }
+        if(!req.getReceiverId().equals(leaderId)){
+            return "ban khong phai leader cua doi nay" ;
+        }
+        if(req.getStatus() != RequestStatus.PENDING){
+            return "yeu cau nay da duoc xu ly roi" ;
+        }
+        if(acp){
+            Member member = memberRepository.findByTeamIdAndMemberID(req.getTeamId(),req.getSenderId()).orElse(null);
+            if(member != null){
+                member.setStatus(false);//danh dau da duoc roi doi
+                memberRepository.save(member);
+            }
+            req.setStatus(RequestStatus.APPROVED);
+        }else{
+            req.setStatus(RequestStatus.REJECTED);
+        }
+        teamRequestRepository.save(req);
+        return acp ? "Đã cho phép thành viên rời đội" : "Đã từ chối yêu cầu rời đội";
+    }
+
+
+    // leader chot doi  gui sumbmission cho ban admin
+    //team status open thanh pending -approval
+    @Transactional
+    public  String submitTeamForApporal(int teamId , long leaderId){
+        Team team = teamRepository.findById(leaderId).orElse(null);
+        if(team == null){
+            return "khong tim thay doi" ;
+        }
+        if (team.getLeaderID() != leaderId) {
+            return "Chỉ Leader mới có quyền chốt đội";
+        }
+        if(team.getStatus() !=TeamStatus.OPEN){
+            return "doi phai o trang thai open thi moi choi duoc ";
+        }
+
+        int count = memberRepository.countByTeamIdAndStatus(teamId,true);
+        if(count == 4 ){
+            return "đội phải đủ 4 người mới được submit" ;
+        }
+
+        boolean alreadySumbit = teamRequestRepository.existsBySenderIdAndTeamIdAndTypeAndStatus(leaderId,teamId,RequestType.TEAM_SUBMISSION,RequestStatus.PENDING);
+
+        if(alreadySumbit) {
+            return "doi dang cho admin duyet ";
+        };
+            team.setStatus(TeamStatus.APPROVED);
+            teamRepository.save(team);
+
+
+        teamRequestRepository.save(new TeamRequest((int) leaderId,0,teamId,RequestType.TEAM_SUBMISSION));
+
+        return "da nop roi " + team.getName() + "dang cho admin duyet nha" ;
+    }
+
+    //Admin duyet / tu choi team submisson
+    //co 2 truong hop 1 appoved(khoa doi ) da dc duyey
+   //hop 1 rejected(can chinh sua doi ) chua duoc duyet
+    @Transactional
+    public String adminReviewTeam(long requestId,boolean approve){
+        TeamRequest req = teamRequestRepository.findById(requestId).orElse(null);
+        if(req == null){
+            return "khong tim thay yeu cau " ;
+        }
+        if(req.getType() != RequestType.TEAM_SUBMISSION){
+            return "day khong phai yeu cau phe duyet " ;
+        }
+        if(req.getStatus() != RequestStatus.PENDING){
+            return "yeu cau nay da duoc xu ly" ;
+        }
+        Team team = teamRepository.findById(req.getTeamId()).orElse(null);
+        if(team == null){
+            return "khong tim thay doi" ;
+
+        }
+        if(approve){
+            team.setStatus(TeamStatus.APPROVED);//duyet r nen khong cho khoa nua
+            team.setInviteCode(null);//vo hieu hoa ma moi de khong cho ai dung lai ma moi nay
+        }else{
+            team.setStatus(TeamStatus.REJECTED);   // Admin từ chối
+            req.setStatus(RequestStatus.REJECTED);
+
+        }
+        teamRepository.save(team);
+        teamRequestRepository.save(req);
+
+        return approve
+                ? "Đội \"" + team.getName() + "\" đã được DUYỆT chính thức!"
+                : "Đã TỪ CHỐI đội \"" + team.getName() + "\"";
+    }
+
+
+
+
+
+//tao ma random a
 
     private String generateUniqueInviteCode(){
         String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -264,7 +399,7 @@ public class TeamService {
                 sb.append(chars.charAt((random.nextInt(chars.length()))));
                 code = sb.toString();
 
-        }while (teamRepository.exitsByInviteCode(code));
+        }while (teamRepository.existsByInviteCode(code));
         return code ;
     }
 

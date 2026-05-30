@@ -14,15 +14,15 @@ public interface MemberRepository extends JpaRepository<Member,Long> {
     List<Member> findByTeamIdAndStatus(Integer teamId, boolean status);
 
 
-    Optional<Member> findByTeamIdAndMemberID(int teamId , int MemberId);
+    Optional<Member> findByTeamIdAndMemberID(Long teamId , int MemberID);
 
-    boolean exitByTeamIdAndMemberIDAndStatus(Long teamId , int MemberId , boolean status) ;
+    boolean existsByTeamIdAndMemberIDAndStatus(Long teamId , int MemberId , boolean status) ;
 
 
     //đếm số lượng thành viên trong team trạng thái active
     int countByTeamIdAndStatus(long teamId , boolean status);
 
-    boolean existsMemberIdAndStatus(int memberId , boolean status);
+    boolean existsByMemberIDAndStatus(int memberID , boolean status);
 
 
 

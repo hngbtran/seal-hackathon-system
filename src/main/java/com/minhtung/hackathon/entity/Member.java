@@ -1,14 +1,13 @@
 package com.minhtung.hackathon.entity;
 
 import com.minhtung.hackathon.enums.MemberRole;
-import jakarta.persistence.Column;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.persistence.*;
 
+@Entity
 public class Member {
 
 
-
+     @Id
     private Long id ;
 
 
@@ -62,7 +61,7 @@ public class Member {
         this.status = status;
     }
 
-    public int getTeamId() {
+    public long getTeamId() {
         return teamId;
     }
 

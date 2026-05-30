@@ -14,7 +14,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity           // ✅ bật @PreAuthorize trên từng method
+@EnableMethodSecurity           //  bật @PreAuthorize trên từng method
 @RequiredArgsConstructor
 public class SecurityConfig {
 

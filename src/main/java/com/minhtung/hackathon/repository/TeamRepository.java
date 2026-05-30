@@ -14,9 +14,9 @@ public interface TeamRepository extends JpaRepository<Team,Long> {
     Optional<Team> findByInviteCode(String inviteCode) ;
 
     List<Team>findByNameContainingIgnoreCaseAndStatus(String name , TeamStatus status) ;
-    boolean exitsByInviteCode(String inviteCode);
+    boolean existsByInviteCode(String inviteCode);
 
-    List<Team> findbyStatus(TeamStatus status) ;
+    List<Team> findByStatus(TeamStatus status);
 
 
 }
