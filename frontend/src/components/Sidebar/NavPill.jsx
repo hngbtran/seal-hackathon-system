@@ -7,13 +7,13 @@ function NavPill({ icon: Icon, label, isActive, onClick }) {
 
     return (
         <button 
-            className= {` ${styles.pill} ${isActive ? styles.isActive : ''} `}
+            className= {` ${styles.pill} ${isActive ? styles.active : ''} `}
             type='button'
             onClick={onClick}
             onMouseEnter={() => setIsHover(true)}
             onMouseLeave={() => setIsHover(false)}
         >
-                <span className={styles.icon}><Icon size={32} weight={weight}></Icon></span>
+                <span><Icon size={32} weight={weight}></Icon></span>
                 <span className={styles.label}>{label}</span>
         </button>
     )

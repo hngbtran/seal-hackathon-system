@@ -4,17 +4,17 @@
     align-items: center;
     justify-content: center;
 
-    width: 6vw;
-    height: 6vw;
+    width: 5.5em;
+    height: 5.5em;
     
     color: var(--color-secondary-blue);
     background-color: var(--color-bg-white);
-    
+
     border: none;
     border-radius: var(--inner-radius);
 
     font-family: var(--body-font-main);
-
+    padding: 1em;
     cursor: pointer;
 }
 
