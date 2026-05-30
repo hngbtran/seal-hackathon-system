@@ -1,10 +1,11 @@
-/* src/index.css */
 * {
-  font-family: var(--body-font-main);
-  font-size: 18px;
-  
   margin: 0;
   padding: 0;
+  font-size: 16px;
+}
+
+body {
+  font-family: var(--body-font-main);
 }
 
 h1, h2, h3 {
@@ -40,7 +41,7 @@ h1, h2, h3 {
      - Hoặc dùng làm màu cho button bị disable
   */
   --color-text-primary: #343330;
-  --color-text-secondary: #C0C0C0;
+  --color-text-secondary: #b0b0b0;
   --color-text-muted: #D9D9D9;
 
   /* ! Màu nền cho các box */
