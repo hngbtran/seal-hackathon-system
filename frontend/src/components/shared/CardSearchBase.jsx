@@ -35,8 +35,7 @@ function CardSearchBase({
   searchPlaceholder,
   search, onSearchChange,
   fptOnly, onFptChange,
-  currentPage,totalPages, onPageChange,
-  columns = 3,
+  currentPage, totalPages, onPageChange,
 }) {
   return (
     <>
@@ -60,11 +59,12 @@ function CardSearchBase({
         <span>Sinh viên Đại học FPT HCMC</span>
       </label>
 
-      <div 
-        style={{ 
-          display: 'grid', 
-          gridTemplateColumns: `repeat(${columns}, 1fr)`,
-          gap: '2em' 
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '2em',
+          justifyContent: 'center'
         }}>
         {items.map(item => renderCard(item))}
       </div>

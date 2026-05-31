@@ -4,8 +4,8 @@
     border: 1px solid var(--color-border-blue);
     background: var(--color-bg-blue);
 
-    width: 25em;
-    height: 25em;
+    width: 27em;
+    height: 27em;
 }
 
 .track {
@@ -17,12 +17,12 @@
     display: flex;
     flex-direction: column;
     gap: 1em;
-    width: 20em;
-    height: 20em;
+    width: 23em;
+    height: 23em;
 
     flex-shrink: 0;
 
-    padding: 2.5em;
+    padding: 2em;
 
     position: relative;
 }
@@ -40,8 +40,8 @@
 }
 
 .avatar {
-    width: 3em;
-    height: 3em;
+    width: 4em;
+    height: 4em;
     border-radius: var(--radius-circle);
     border: 1px solid var(--color-border-blue);
     background-color: var(--color-bg-blue);
@@ -58,13 +58,11 @@
 .email,
 .school {
     margin: 0;
-    font-size: 0.8rem;
     color: var(--color-secondary-blue);
 }
 
 .bioLabel {
     margin: 0;
-    font-size: 0.9rem;
     font-weight: bold;
     color: var(--color-primary-blue);
 }
@@ -80,17 +78,14 @@
 
 .composeTitle {
     margin: 0;
-    font-family: var(--title-font-main);
-    font-weight: 800;
-    font-style: italic;
-    font-size: 1.1rem;
+    font-size: 1.4rem;
     color: var(--color-primary-blue);
     text-align: center;
 }
 
 .messageBox {
-    border: 1.5px solid var(--color-border-blue);
-    border-radius: 10px;
+    border: 1px solid var(--color-border-blue);
+    border-radius: var(--inner-radius);
     padding: 0.75em;
     background: white;
 }
@@ -101,7 +96,6 @@
     outline: none;
     resize: none;
     font-family: var(--body-font-main);
-    font-size: 14px;
     color: var(--color-text-primary);
     line-height: 1.6;
 }

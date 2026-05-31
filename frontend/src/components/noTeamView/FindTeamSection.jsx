@@ -37,7 +37,6 @@ function FindTeamSection({ teams = [] }) {
         currentPage={currentPage}
         totalPages={8}
         onPageChange={setCurrentPage}
-        columns={2}
       />
     </div>
   )

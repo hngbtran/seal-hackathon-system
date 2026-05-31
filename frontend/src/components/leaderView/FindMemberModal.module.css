@@ -17,14 +17,13 @@
     background: white;
     border-radius: var(--radius);
     border: 1px solid var(--color-border-blue);
-    width: fit-content;
     
     padding: 3.5em 5.5em;
 }
 
 .modalScroll {
     overflow-y: auto;
-    max-width: 85vw;
+    width: 82vw;
     max-height: 80vh;
 }
 

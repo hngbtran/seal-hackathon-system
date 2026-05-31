@@ -5,13 +5,12 @@
 }
 
 .content {
-  display: flex;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: 3fr 1fr;
   gap: 1.25em;
 }
 
 .side {
-  width: 20vw;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
