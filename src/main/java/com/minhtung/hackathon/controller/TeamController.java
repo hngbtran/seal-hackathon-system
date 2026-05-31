@@ -4,6 +4,7 @@ package com.minhtung.hackathon.controller;
 import com.minhtung.hackathon.dto.CreateTeamDto;
 import com.minhtung.hackathon.dto.TeamResponseDto;
 import com.minhtung.hackathon.dto.joinByCode;
+import com.minhtung.hackathon.entity.User;
 import com.minhtung.hackathon.repository.UserRepository;
 import com.minhtung.hackathon.security.JwtUtil;
 import com.minhtung.hackathon.service.TeamService;
@@ -14,6 +15,7 @@ import jakarta.validation.OverridesAttribute;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -32,32 +34,26 @@ public class TeamController {
     @Operation (summary = "Lập đội mới",
               description = "Tạo đội (status=OPEN) + gửi INVITATION qua email cho thành viên")
 @PostMapping("/create")
-public ResponseEntity<?>createTeam(
-            @RequestBody CreateTeamDto dto ,
-            @RequestHeader("Authorization")String auth) {
-        Integer uid = getUid(auth);
-        if (uid == null) {
-
-            return unauthorized() ;
-        }
-        try{
-            TeamResponseDto result = teamService.createTeam(dto,uid);
+    public ResponseEntity<?> createTeam(@RequestBody CreateTeamDto dto) {
+        Long uid = getCurrentUserId();
+        if (uid == null) return unauthorized();
+        try {
+            TeamResponseDto result = teamService.createTeam(dto, Math.toIntExact(uid));
             return ResponseEntity.ok(result);
-        }catch (RuntimeException e){
+        } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
-
-
-
     }
+
+
+
+
 
     @Operation(summary = "Tham gia đội qua mã mời",
             description = "Chỉ áp dụng khi đội OPEN; tự động vào đội không cần duyệt")
     @PostMapping("/join-by-code")
-    public ResponseEntity<String> joinByCode(
-            @RequestBody joinByCode dto,
-            @RequestHeader("Authorization") String auth) {
-        Integer uid = getUid(auth);
+    public ResponseEntity<String> joinByCode(@RequestBody joinByCode dto) {
+        Long uid = getCurrentUserId();
         if (uid == null) return unauthorized();
         return ResponseEntity.ok(teamService.joinTeamByCode(dto.getInviteCode(), uid));
     }
@@ -72,22 +68,19 @@ public ResponseEntity<?>createTeam(
     @Operation(summary = "Gửi yêu cầu xin vào đội (JOIN_REQUEST)",
             description = "Leader của đội sẽ nhận và duyệt")
     @PostMapping("/{teamId}/request-join")
-    public ResponseEntity<String> requestJoin(
-            @PathVariable Integer teamId,
-            @RequestHeader("Authorization") String auth) {
-        Integer uid = getUid(auth);
+    public ResponseEntity<String> requestJoin(@PathVariable Long teamId) {
+        Long uid = getCurrentUserId();
         if (uid == null) return unauthorized();
-        return ResponseEntity.ok(teamService.sendJoinRequest(Long.valueOf(teamId), uid));
-
+        return ResponseEntity.ok(teamService.sendJoinRequest(teamId, uid));
     }
 
     @Operation(summary = "Người được mời đồng ý hoặc từ chối INVITATION")
     @PutMapping("/invitation/{requestId}/respond")
     public ResponseEntity<String> respondInvitation(
             @PathVariable Long requestId,
-            @RequestParam boolean accept,
-            @RequestHeader("Authorization") String auth) {
-        Integer uid = getUid(auth);
+            @RequestParam boolean accept)
+             {
+                 Long uid = getCurrentUserId();
         if (uid == null) return unauthorized();
         return ResponseEntity.ok(teamService.respondToInvitation(requestId, accept, uid));
     }
@@ -96,9 +89,9 @@ public ResponseEntity<?>createTeam(
     @PutMapping("/Join-request/{requestId}/respond")
     public ResponseEntity<String> respondJoinRequest(
             @PathVariable Long requestId,
-            @RequestParam boolean accept,
-            @RequestHeader("Authorization") String auth) {
-        Integer uid = getUid(auth);
+            @RequestParam boolean accept)
+            {
+        Long uid = getCurrentUserId();
         if (uid == null) return unauthorized();
         return ResponseEntity.ok(teamService.respondToJoinRequest(requestId, accept, uid));
 
@@ -106,11 +99,8 @@ public ResponseEntity<?>createTeam(
 
     @Operation(summary = "thanh vien gui yeu cau xin roi doi ")
     @PostMapping("{teamId}/leave-request")
-    public ResponseEntity<String> leaveRequest(
-            @PathVariable Long teamId,
-
-            @RequestHeader("Authorization") String auth) {
-        Integer uid = getUid(auth);
+    public ResponseEntity<String> leaveRequest(@PathVariable Long teamId) {
+        Long uid = getCurrentUserId();
         if (uid == null) return unauthorized();
         return ResponseEntity.ok(teamService.requestLeave(teamId, uid));
     }
@@ -119,9 +109,9 @@ public ResponseEntity<?>createTeam(
     @PutMapping("/Leave-request/{requestId}/respond")
     public ResponseEntity<String> respondLeaveRequest(
             @PathVariable long requestId,
-            @RequestParam boolean accept,
-            @RequestHeader("Authorization") String auth) {
-        Integer uid = getUid(auth);
+            @RequestParam boolean accept)
+             {
+        Long uid = getCurrentUserId();
         if (uid == null) return unauthorized();
         return ResponseEntity.ok(teamService.respondToLeaveRequest(requestId, accept, uid));
     }
@@ -132,15 +122,10 @@ public ResponseEntity<?>createTeam(
     @PostMapping("/{teamId}/submit")
 
 
-    public ResponseEntity<String> sumbit(
-            @PathVariable int teamId,
-
-            @RequestHeader("Authorization") String auth) {
-        Integer uid = getUid(auth);
+    public ResponseEntity<String> submit(@PathVariable int teamId) {
+        Long uid = getCurrentUserId();
         if (uid == null) return unauthorized();
         return ResponseEntity.ok(teamService.submitTeamForApporal(teamId, uid));
-
-
     }
 
     @Operation(summary = "Admin duyệt hoặc từ chối TEAM_SUBMISSION",
@@ -148,7 +133,7 @@ public ResponseEntity<?>createTeam(
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/submission/{requestId}/review")
     public ResponseEntity<String> adminReview(
-            @PathVariable Integer requestId,
+            @PathVariable Long requestId,
             @RequestParam boolean approve) {
         return ResponseEntity.ok(teamService.adminReviewTeam(requestId, approve));
     }
@@ -162,21 +147,33 @@ public ResponseEntity<?>createTeam(
 
 
 
-    private Integer getUid(String authHeader) {
+//    private Integer getUid(String authHeader) {
+//        try {
+//            String token = authHeader.substring(7);
+//            String username = jwtUtil.extracUserName(token);
+//            return userRepository.findByUsername(username)
+//                    .map(u -> Math.toIntExact(u.getId()))
+//                    .orElse(null);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return  null ;
+//        }
+
+
+    private Long getCurrentUserId() {
         try {
-            String token = authHeader.substring(7);
-            String username = jwtUtil.extracUserName(token);
+            String username = SecurityContextHolder.getContext()
+                    .getAuthentication().getName();
             return userRepository.findByUsername(username)
-                    .map(u -> Math.toIntExact(u.getId()))
+                    .map(User::getId)
                     .orElse(null);
         } catch (Exception e) {
-            e.printStackTrace();
-            return  null ;
+            return null;
         }
     }
 
     private ResponseEntity<String> unauthorized() {
-        return ResponseEntity.status(401).body("Token không hợp lệ");
+        return ResponseEntity.status(401).build();
     }
 
 

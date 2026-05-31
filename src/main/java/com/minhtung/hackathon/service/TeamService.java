@@ -27,64 +27,54 @@ import java.util.Random;
 @RequiredArgsConstructor
 public class TeamService {
 
-    private final TeamRepository teamRepository ;
-    private final MemberRepository memberRepository ;
-    private final TeamRequestRepository teamRequestRepository ;
-    private final UserRepository userRepository ;
-    private final EmailService emailService ;
+    private final TeamRepository teamRepository;
+    private final MemberRepository memberRepository;
+    private final TeamRequestRepository teamRequestRepository;
+    private final UserRepository userRepository;
+    private final EmailService emailService;
 
 
     @Transactional
-    public TeamResponseDto createTeam(CreateTeamDto create ,int leaderId){
-        if(create.getTeamName() == null || create.getTeamName().trim().isEmpty()){
-            throw new RuntimeException("Tên đội không được để trống") ;
-        }
-      if(create.getTeamName().length()>30){
-          throw new RuntimeException("tên đội không thể lớn hơn 30 kí tự ");
-      }
+    public TeamResponseDto createTeam(CreateTeamDto create, int leaderId) {
+        if (create.getTeamName() == null || create.getTeamName().trim().isEmpty())
+            throw new RuntimeException("Tên đội không được để trống");
+        if (create.getTeamName().length() > 30)
+            throw new RuntimeException("Tên đội không thể lớn hơn 30 ký tự");
+        if (memberRepository.existsByMemberIDAndStatus(leaderId, true))
+            throw new RuntimeException("Bạn đã thuộc team rồi, không thể tạo team mới");
 
-      if(memberRepository.existsByMemberIDAndStatus(leaderId,true)){
-          throw new RuntimeException("Bạn thuộc team rồi nên không thể tham gia đăng kí vào team khác") ;
-      }
-
-      String inviteCode = generateUniqueInviteCode();
-        Team team = new Team(create.getTeamName().trim(),leaderId,inviteCode);
+        String inviteCode = generateUniqueInviteCode();
+        Team team = new Team(create.getTeamName().trim(), leaderId, inviteCode);
         team.setStatus(TeamStatus.OPEN);
         teamRepository.save(team);
 
-        memberRepository.save(new Member(MemberRole.LEADER,true,team.getId(),leaderId));
+        memberRepository.save(new Member(MemberRole.LEADER, true, team.getId(), leaderId));
 
+        // Gửi INVITATION trong app (không gửi email)
+        List<Long> memberIds = create.getMemberId();
+        if (memberIds != null) {
+            int limit = Math.min(memberIds.size(), 3); // duoc toi da 3 nguoi thoi vi leader la 1 roi
+            for (int i = 0; i < limit; i++) {
+                Long memberId = memberIds.get(i);
+                if (memberId == null || memberId.equals(leaderId)) continue;
 
-        //gửi invitation cho từng email
-        List<String> emails = create.getMemberEmails();
-        if(emails !=null){
-            int limit = Math.min(emails.size(),4) ;
-            for (int i = 0 ; i<limit ; i++){
-                String email = emails.get(i);
+                // Kiểm tra user tồn tại
+                User invitedUser = userRepository.findById(memberId).orElse(null);
+                if (invitedUser == null) continue;
 
-                if(email == null || email.trim().isEmpty()){
-                    continue;
-                }
-                User invitedUsers= userRepository.findByEmail(email.trim()).orElse(null);
-                //gui email
-                if(invitedUsers == null){
-                    emailService.sendTeamInviteEmail(email.trim(),team.getName(),inviteCode);
-                    continue;
-                }
+                // Kiểm tra user đã có đội chưa
+                if (memberRepository.existsByMemberIDAndStatus(Math.toIntExact(memberId), true)) continue;
 
-                //bo qua chinh minh
-                if(invitedUsers.getId().equals(leaderId)){
-                    continue;
-                }
-                //luu teamRequest loai invitation(nguoi duoc moi can bam dong y de duoc tham gia vao team
-                TeamRequest invination = new TeamRequest(leaderId , invitedUsers.getId(),team.getId(), RequestType.INVITATION);
-                teamRequestRepository.save(invination);
-                //gui email thong bao
-                emailService.sendTeamInviteEmail(email.trim(), team.getName() ,inviteCode);
+                // Chỉ tạo TeamRequest INVITATION, không gửi email
+                teamRequestRepository.save(new TeamRequest(
+                        leaderId, memberId, team.getId(), RequestType.INVITATION));
             }
         }
-        int memberCount = memberRepository.countByTeamIdAndStatus((int) team.getId(),true);
-        return  toDto(team,memberCount);
+
+        int memberCount = memberRepository.countByTeamIdAndStatus(team.getId(), true);
+        return toDto(team, memberCount);
+    }
+
 
 
 
@@ -93,9 +83,9 @@ public class TeamService {
         //luat la chi doi dang co Open moi co the join bang ma
         // tu dong them member ma khong can admin duyet
 
-    }
+
     @Transactional
-    public String joinTeamByCode(String inviteCode,int userId) {
+    public String joinTeamByCode(String inviteCode,Long userId) {
         Team team = teamRepository.findByInviteCode(inviteCode).orElse(null);
         if (team == null) {
             return "Mã mời không hợp lệ hoặc không  tồn tại";
@@ -153,7 +143,7 @@ public class TeamService {
     //can leader duyet nưa nha
 
         @Transactional
-        public  String sendJoinRequest(Long teamId,int userId) {
+        public  String sendJoinRequest(Long teamId,Long userId) {
             Team team = teamRepository.findById(teamId).orElse(null);
             if (team == null) {
                 return "không tim thấy đội ";
@@ -184,7 +174,7 @@ public class TeamService {
     //nguoi duoc moi co the tu xu ly
 
     @Transactional
-    public String respondToInvitation(Long requestId , boolean acp , int userId){
+    public String respondToInvitation(Long requestId , boolean acp , long userId){
         TeamRequest req = teamRequestRepository.findById(requestId).orElse(null) ;
         if(req == null){
             return "Không tìm thấy lời mời" ;
@@ -221,9 +211,9 @@ public class TeamService {
 
     //Leader duyet / tu choi join request
     @Transactional
-    public String respondToJoinRequest(Long requesrId , boolean acp , int leaderId){
+    public String respondToJoinRequest(Long requesrId , boolean acp , long leaderId){
         TeamRequest req = teamRequestRepository.findById(requesrId).orElse(null) ;
-        if(req != null){
+        if(req == null){
             return "khong tim thay yeu cau" ;
         }
         if(req.getType() !=RequestType.JOIN_REQUEST){
@@ -256,7 +246,7 @@ public class TeamService {
     //leader can duyet
     //leader khong the tu y roi doi (giai tán nhóm)
     @Transactional
-    public String requestLeave(Long teamID , int userId) {
+    public String requestLeave(Long teamID , Long userId) {
         Member member = memberRepository.findByTeamIdAndMemberID(teamID, userId).orElse(null);
         if (member == null || !member.isStatus()) {
             return "ban khong thuoc doi nay ";
@@ -284,7 +274,7 @@ public class TeamService {
         //8 day la ham dung de leadder duyet vuec leave_request trong team
 
     @Transactional
-    public String respondToLeaveRequest(Long requestId , boolean acp , int leaderId){
+    public String respondToLeaveRequest(Long requestId , boolean acp , long leaderId){
         TeamRequest req = teamRequestRepository.findById(requestId).orElse(null);
         if(req == null){
             return "không tìm thấy yêu câu rời đội" ;

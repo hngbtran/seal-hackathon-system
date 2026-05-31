@@ -24,7 +24,7 @@ public class TeamRequest {
     @Column(name = "Status", length = 20, nullable = false)
     private RequestStatus status = RequestStatus.PENDING;
     @Column(name = "SenderId", nullable = false)
-    private int senderId;
+    private  long senderId;
     @Column(name = "ReceiverID", nullable = false)
     private Long receiverId;
 
@@ -37,7 +37,7 @@ public class TeamRequest {
 
 
 
-    public TeamRequest(int senderId, long receiverId, long teamId, RequestType type) {
+    public TeamRequest(long senderId, long receiverId, long teamId, RequestType type) {
         this.senderId = senderId;
         this.receiverId = receiverId;
         this.teamId = teamId;

@@ -12,7 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 public class CreateTeamDto {
     private String teamName ;
-    private List<String> memberEmails ;
+    private List<Long> memberId ;
 
 
 

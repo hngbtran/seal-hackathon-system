@@ -8,6 +8,7 @@ public class Member {
 
 
      @Id
+     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id ;
 
 
@@ -24,12 +25,12 @@ public class Member {
      @Column(name = "TeamId" , nullable = false)
     private long teamId ;
       @Column(name = "MemberId",nullable = false)
-    private int memberID ;
+    private long memberID ;
 
     public Member() {
     }
 
-    public Member( MemberRole role, boolean status, long teamId, int memberID) {
+    public Member( MemberRole role, boolean status, long teamId, long memberID) {
 
         this.role = role;
         this.status = status;
@@ -69,7 +70,7 @@ public class Member {
         this.teamId = teamId;
     }
 
-    public int getMemberID() {
+    public long getMemberID() {
         return memberID;
     }
 

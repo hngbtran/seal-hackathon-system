@@ -51,6 +51,7 @@ public class SecurityConfig {
 
                         // Auth
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/team/**").hasAnyRole("ADMIN", "LECTURER", "USER")
 
                         // Role
                         .requestMatchers("/admin/**").hasRole("ADMIN")
