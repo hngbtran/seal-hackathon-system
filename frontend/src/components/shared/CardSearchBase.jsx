@@ -3,16 +3,29 @@ import Button from '../shared/Button'
 import styles from '../leaderView/FindMemberModal.module.css'
 
 function getPageItems(currentPage, totalPages) {
-  if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1)
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1)
+  }
+
   const items = []
-  const delta = 1
+  const delta = 1 // số trang hiện thêm mỗi bên của currentPage
+
   const rangeStart = Math.max(2, currentPage - delta)
   const rangeEnd = Math.min(totalPages - 1, currentPage + delta)
+
+  // Luôn có trang đầu
   items.push(1)
+
   if (rangeStart > 2) items.push('...')
-  for (let i = rangeStart; i <= rangeEnd; i++) items.push(i)
+
+  for (let i = rangeStart; i <= rangeEnd; i++) {
+    items.push(i)
+  }
+
   if (rangeEnd < totalPages - 1) items.push('...')
+
   items.push(totalPages)
+
   return items
 }
 
@@ -20,13 +33,10 @@ function CardSearchBase({
   items,
   renderCard,
   searchPlaceholder,
-  search,
-  onSearchChange,
-  fptOnly,
-  onFptChange,
-  currentPage,
-  totalPages,
-  onPageChange,
+  search, onSearchChange,
+  fptOnly, onFptChange,
+  currentPage,totalPages, onPageChange,
+  columns = 3,
 }) {
   return (
     <>
@@ -50,7 +60,12 @@ function CardSearchBase({
         <span>Sinh viên Đại học FPT HCMC</span>
       </label>
 
-      <div className={styles.grid}>
+      <div 
+        style={{ 
+          display: 'grid', 
+          gridTemplateColumns: `repeat(${columns}, 1fr)`,
+          gap: '2em' 
+        }}>
         {items.map(item => renderCard(item))}
       </div>
 

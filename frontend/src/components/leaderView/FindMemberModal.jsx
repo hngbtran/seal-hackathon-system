@@ -26,7 +26,7 @@ function FindMemberModal({ onClose }) {
 
   return (
     <div className={styles.backdrop} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+      <div className={`${styles.wrapper} ${modalScroll}`} onClick={(e) => e.stopPropagation()}>
 
         <button className={styles.closeBtn} onClick={onClose}>
           <X size={24} color="var(--color-text-secondary)" />
