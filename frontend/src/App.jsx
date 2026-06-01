@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import LeaderView from './pages/LeaderView'
 import MemberView from './pages/MemberView'
-import { useNavigate } from 'react-router-dom';
+import NoTeamViews from './pages/NoTeamView';
+import LoginPage from './pages/LoginPage';
 function App() {
-  const navigate = useNavigate();
   const [role, setRole] = useState(null);
   const token = localStorage.getItem("accessToken");
 
@@ -21,25 +21,22 @@ function App() {
         setRole(res.data);
       })
       .catch((err) => {
-        // Không có role => MEMBER
         if (err.response?.status === 404) {
-          setRole("MEMBER");
-        } else {
           setRole("UNAUTHORIZED");
-        }
+        } 
       });
   }, [token]);
   if (!token) {
-    navigate("/");
+    return <LoginPage />;
   }
   if (role === "LEADER") {
     return <LeaderView />;
-  }
-  else {
+  }else if(role==='MEMBER')
+   {
     return <MemberView />;
+  }else{
+    return <NoTeamViews />;
   }
-
 }
-
 
 export default App
