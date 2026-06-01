@@ -1,0 +1,25 @@
+.page {
+    min-height: 100vh;
+    background: var(--color-bg-blue);
+    display: flex;
+    flex-direction: column;
+}
+
+.main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2em 1em;
+}
+
+.card {
+    width: 100%;
+    max-width: 750px;
+
+    background: white;
+    border-radius: var(--radius);
+    border: 1px solid var(--color-border-blue);
+
+    padding: 2.5em 3em;
+}
