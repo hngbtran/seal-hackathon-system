@@ -17,9 +17,10 @@ function DisclaimerStep({ onClose, onNext }) {
                     currentStep={1}
                     totalSteps={3}
                     stepLabel="Lưu ý"
-                    onBack={onClose}
+                    onBack={() => {}}
                     onNext={onNext}
                     nextDisabled={!agreed}
+                    backDisabled={true}
                 />
             }
         >

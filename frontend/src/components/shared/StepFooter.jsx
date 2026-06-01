@@ -12,6 +12,7 @@ function StepFooter({
   nextLabel,        // mặc định 'Tiếp tục', có thể đổi thành 'Xác nhận'
   nextDisabled,     // true → nút tiếp tục bị disabled
   nextLoading,      // true → nút đang loading
+  backDisabled,
 }) {
   const progress = (currentStep / totalSteps) * 100
 
@@ -31,9 +32,11 @@ function StepFooter({
         {onBack && (
           <Button
             label="Quay lại"
+            labelSize={16}
             icon={ArrowLeft}
             iconPosition="left"
             variant="outline"
+            disabled={backDisabled}
             onClick={onBack}
           />
         )}
@@ -41,6 +44,7 @@ function StepFooter({
         {onNext && (
           <Button
             label={nextLabel ?? 'Tiếp tục'}
+            labelSize={16}
             icon={ArrowRight}
             iconPosition="right"
             variant="primary"
