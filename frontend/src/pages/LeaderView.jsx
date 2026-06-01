@@ -50,7 +50,7 @@ function LeaderView() {
   const [FAKE_REQUESTS, setFAKE_REQUESTS] = useState([]);
   const [FAKE_INVITES, setFAKE_INVITES] = useState([]);
   const token = localStorage.getItem("accessToken")
-
+  const [teamInfo, setTeamInfo] = useState({ teamName: '', description: '', teamCode: '' });
 
   // api lấy team members thành viên đội 
   useEffect(() => {
@@ -65,6 +65,23 @@ function LeaderView() {
       )
       .then((response) => {
         setFAKE_MEMBERS(response.data);
+      })
+      .catch((error) => console.log(error));
+  }, []);
+
+   // api lấy team info
+  useEffect(() => {
+    axios
+      .get('http://localhost:8080/api/team/team-info'
+        , {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}` // nếu có JWT
+          }
+        }
+      )
+      .then((response) => {
+        setTeamInfo(response.data);
       })
       .catch((error) => console.log(error));
   }, []);
@@ -170,7 +187,9 @@ function LeaderView() {
 
 const handleCancel = ((requestId) => {
   // 1. Hiển thị hộp thoại xác nhận trước khi gửi yêu cầu hủy/xóa
+  alert(requestId);
   if (confirm('Bạn có chắc chắn muốn hủy lời mời này không?')) {
+    alert(requestId);
     axios
       .delete('http://localhost:8080/api/teamrequest/invitation', {
         headers: {
@@ -293,10 +312,12 @@ const handleCancel = ((requestId) => {
       <div classname={styles.page}>
 
         {/* Thanh info đội — full width */}
+
+        {/* cần truyền vào teamName ,description, teamCode */}
         <TeamInfoHeader
-          teamname="SEAL Hackathon"
-          description="Giới thiệu ngắn về đội bạn và định hướng giải quyết bài toán. Giới thiệu ngắn về đội bạn và định hướng giải quyết bài toán. Giới thiệu ngắn về đội bạn và định hướng giải quyết bài toán. Giới thiệu ngắn về đội bạn và định hướng giải quyết bài toán."
-          teamCode="ABCXYZ"
+          teamname={teamInfo.teamName}
+          description={teamInfo.description}
+          teamCode={teamInfo.teamCode}
           onFindMember={() => console.log('mở popup tìm thành viên')}
         />
 

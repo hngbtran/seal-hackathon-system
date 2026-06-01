@@ -23,6 +23,7 @@ function TeamInfoHeader({ teamName, description, teamCode, showFindMember = true
                 <p>{description}</p>
             </div>
 
+            {/* ấm vào tìm member thì sẽ show ra list này */}
             {showFindMember && (
                 <div>
                     <div className={styles.codeBox}>

@@ -19,7 +19,6 @@ function FindTeamSection({ teams = [] }) {
   }))
 
 
-
   return (
     <div className={styles.wrapper}>
       <CardSearchBase

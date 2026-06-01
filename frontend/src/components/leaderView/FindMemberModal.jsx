@@ -3,15 +3,9 @@ import { X } from '@phosphor-icons/react'
 import MemberCard from './MemberCard'
 import CardSearchBase from '../shared/CardSearchBase'
 import styles from './FindMemberModal.module.css'
+import axios from 'axios'
+import { useEffect } from 'react'
 
-const FAKE_MEMBERS = Array.from({ length: 6 }, (_, i) => ({
-  id: i + 1,
-  name: 'Nguyễn Thành Thái',
-  email: 'ntbi533@gmail.com',
-  school: 'Đại học FPT',
-  bio: 'Mình là sinh viên năm 3 ngành Kỹ thuật phần mềm tại FPT University. Mình có kinh nghiệm làm việc với React và Spring Boot.',
-  isInvited: false,
-}))
 
 function FindMemberModal({ onClose }) {
   const [search, setSearch] = useState('')
@@ -19,10 +13,27 @@ function FindMemberModal({ onClose }) {
   const [invitedIds, setInvitedIds] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
 
-  const members = FAKE_MEMBERS.map(m => ({
-    ...m,
-    isInvited: invitedIds.includes(m.id),
-  }))
+   // lay danh sach free user trong he thong
+  const [FAKE_MEMBERS, setFAKE_MEMBERS] = useState([]);
+  const token = localStorage.getItem("accessToken") 
+    useEffect(() => {
+      axios
+        .get('http://localhost:8080/api/user/free-users'
+          , {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}` // nếu có JWT
+            }
+          }
+        )
+        .then((response) => {
+          response.data.forEach(user => {
+            user.isInvited = false; // thêm thuộc tính isInvited vào từng user
+          });
+          setFAKE_MEMBERS(response.data);
+        })
+        .catch((error) => console.log(error));
+    }, []);
 
   return (
     <div className={styles.backdrop} onClick={onClose}>
@@ -38,7 +49,7 @@ function FindMemberModal({ onClose }) {
         </p>
 
         <CardSearchBase
-          items={members}
+          items={FAKE_MEMBERS}
           renderCard={(member) => (
             <MemberCard
               key={member.id}

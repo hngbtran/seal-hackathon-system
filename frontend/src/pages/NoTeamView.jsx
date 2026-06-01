@@ -5,30 +5,11 @@ import FindTeamSection from '../components/noTeamView/FindTeamSection'
 import InviteTeamCard from '../components/noTeamView/InviteTeamCard'
 import RequestTeamCard from '../components/noTeamView/RequestTeamCard'
 import styles from './LeaderView.module.css'
+// <<<<<<< HEAD
 import { useEffect } from 'react'
 import axios from 'axios'
-// Data tạm — sau này thay bằng API
+// import JoinTeamFlow from '../components/joinFlow/JoinTeamFlow'
 
-
-// const FAKE_TEAMS = Array.from({ length: 6 }, (_, i) => ({
-//     id: i + 1,
-//     name: 'Tên đội',
-//     description: 'Giới thiệu ngắn về đội của bạn và định hướng giải quyết bài toán.',
-//     maxSlots: 4,
-//     members: [
-//         { id: 10, name: 'Nguyễn Thành Thái', school: 'Đại học FPT' },
-//         { id: 11, name: 'Hồ Ngọc Bảo Trân', school: 'Đại học FPT' },
-//     ],
-//     isRequested: false,
-// }))
-
-// const FAKE_INVITES = [
-//   { id: 1, teamName: 'Tên đội', memberCount: 2, maxSlots: 4, message: 'Xin chào...' },
-// ]
-// const FAKE_REQUESTS = [
-//     { id: 1, teamName: 'Tên đội', memberCount: 2, maxSlots: 4 },
-//     { id: 2, teamName: 'Tên đội', memberCount: 3, maxSlots: 4 },
-// ]
 
 
 function NoTeamView() {
@@ -84,8 +65,7 @@ function NoTeamView() {
       .catch((error) => console.log(error));
   }, []);
 
-
-
+     const [showFlow, setShowFlow] = useState(false)
 
 
   //
@@ -139,12 +119,16 @@ function NoTeamView() {
     }
   });
 
+// if (showFlow) return <JoinTeamFlow onClose={() => setShowFlow(false)} />
+
   return (
     <EventLayout>
       <div className={styles.page}>
 
 
-        <NoTeamHeader />
+        <NoTeamHeader
+        onCreateTeam={() => setShowFlow(true)}
+        />
 
         <div className={styles.content}>
 
@@ -172,5 +156,6 @@ function NoTeamView() {
     </EventLayout>
   )
 }
+
 
 export default NoTeamView

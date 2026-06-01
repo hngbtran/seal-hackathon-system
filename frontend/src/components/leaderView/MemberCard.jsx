@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ArrowRight, ArrowLeft, PaperPlaneTilt, X } from '@phosphor-icons/react'
 import Button from '../shared/Button'
 import styles from './MemberCard.module.css'
-
+import axios from 'axios'
 function MemberCard({ member, onInvite, onCancel }) {
     // 'view' | 'compose' | 'invited'
     const [cardState, setCardState] = useState(
@@ -11,13 +11,30 @@ function MemberCard({ member, onInvite, onCancel }) {
     const [message, setMessage] = useState(
         `Xin chào! Mình là đội trưởng của [Tên đội]. Mình thấy profile của bạn rất phù hợp và muốn mời bạn gia nhập đội. Rất mong được cùng bạn thi đấu!`
     )
-
+    //ham invinte
+    const token = localStorage.getItem("accessToken");
     function handleSend() {
-        onInvite(member.id, message)
-        setCardState('invited')
+        console.log("member =", member);
+console.log("sending id =", member.id);
+        axios.post('http://localhost:8080/api/teamrequest/invitation',
+            { id: member.id, message: message },
+            { headers: { Authorization: `Bearer ${token}` } }
+        )
+            .then(() => {
+                onInvite(member.id, message)
+                setCardState('invited')
+                window.location.reload();
+            })
+            .catch((error) => {
+                console.log(error);
+            })
+
     }
 
+    // ham cancel invite
+
     function handleCancel() {
+
         onCancel(member.id)
         setCardState('view')
     }
@@ -106,7 +123,7 @@ function MemberCard({ member, onInvite, onCancel }) {
                             variant="primary"
                             onClick={handleSend}
                         />
-                    </div>
+                    </div>  
                 </div>
 
             </div>

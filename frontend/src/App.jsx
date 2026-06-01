@@ -1,3 +1,4 @@
+// <<<<<<< HEAD
 
 import './App.css'
 import { useState, useEffect } from 'react';
@@ -6,9 +7,12 @@ import LeaderView from './pages/LeaderView'
 import MemberView from './pages/MemberView'
 import NoTeamViews from './pages/NoTeamView';
 import LoginPage from './pages/LoginPage';
+import JoinTeamFlow from './components/joinFlow/JoinTeamFlow';
 function App() {
   const [role, setRole] = useState(null);
   const token = localStorage.getItem("accessToken");
+
+  
 
   useEffect(() => {
     axios
@@ -37,6 +41,9 @@ function App() {
   }else{
     return <NoTeamViews />;
   }
+
+ 
+
 }
 
 export default App

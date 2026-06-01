@@ -81,7 +81,6 @@ function TeamCard({
                                 )}
                             </div>
                         ))}
-
                         {Array.from({ length: emptyCount }, (_, i) => (
                             <div key={`empty-${i}`} className={memberEmptyStyles.avatar}>
                                 <Plus size={28} color="var(--color-border-blue)" />

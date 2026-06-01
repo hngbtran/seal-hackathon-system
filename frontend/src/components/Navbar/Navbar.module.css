@@ -13,7 +13,6 @@
 
     padding: 1em 2em;
 
-
     position: relative;
 }
 
@@ -29,6 +28,9 @@
             rgba(255, 255, 255, 0.02));
     transform: skewX(-25deg);
     pointer-events: none;
+
+    z-index: 0;
+    
 }
 
 .wrapper::before {
@@ -45,4 +47,11 @@
 .logo {
     height: 100%;
     margin-right: auto
+}
+
+.rightSectionContent {
+    display: flex;
+    gap: 0.5em;
+    position: relative; /* giúp buttons nằm trên so với cái wrapper (cái vệt sáng) */
+    z-index: 1;
 }
