@@ -19,7 +19,7 @@
 /* Hint */
 .hint {
     margin-left: 1em;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     color: var(--color-text-secondary);
 }
 
@@ -42,7 +42,7 @@
     gap: 0.5em;
     border: 1px solid var(--color-border-blue);
     border-radius: var(--radius);
-    padding: 0.65em 1em;
+    padding: 0.65em 1.2em;
     background: white;
 
     transition: border-color 0.15s ease;
@@ -57,7 +57,7 @@
 }
 
 .inputBox:focus-within {
-    border-color: var(--color-primary-blue);
+    border-color: var(--color-secondary-blue);
 }
 
 .inputBox.disabled {
@@ -120,8 +120,7 @@
 }
 
 .message {
-    margin-left: 1em;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     color: var(--color-text-primary);
 }
 
@@ -130,7 +129,13 @@
 }
 
 .message.success {
-    color: var(--color-primary-green);
+    color: var(--color-border-green);
+}
+
+.messageContainer {
+    display: flex;
+    gap:0.25em;
+    margin-left: 1em;
 }
 
 .charCount {
@@ -139,3 +144,8 @@
     margin-left: auto;
     margin-right: 1em;
 }
+
+.error .iconRight, .error .iconLeft {
+    color: var(--color-primary-orange);
+}
+

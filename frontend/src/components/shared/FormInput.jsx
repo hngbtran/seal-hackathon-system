@@ -1,4 +1,5 @@
 import styles from './FormInput.module.css'
+import { WarningCircle } from '@phosphor-icons/react'
 
 function FormInput({
   label,
@@ -19,7 +20,7 @@ function FormInput({
   name,
   ...rest
 }) {
-  const IconLeft  = iconLeft
+  const IconLeft = iconLeft
   const IconRight = iconRight
   const ActionIcon = actionIcon
 
@@ -82,11 +83,19 @@ function FormInput({
 
       {/* Bottom row: message + char count */}
       <div className={styles.bottom}>
-        {message && (
-          <p className={`${styles.message} ${status ? styles[status] : ''}`}>
-            {message}
-          </p>
-        )}
+        <div className={styles.messageContainer}>
+          {status === 'error' && (
+            <span className={`${styles.iconLeft} ${styles.error}`}>
+              <WarningCircle size={20} color="var(--color-primary-orange)" />
+            </span>
+          )}
+          {message && (
+            <p className={`${styles.message} ${status ? styles[status] : ''}`}>
+              {message}
+            </p>
+          )}
+        </div>
+
         {maxLength && (
           <span className={styles.charCount}>
             {value?.length ?? 0}/{maxLength}
