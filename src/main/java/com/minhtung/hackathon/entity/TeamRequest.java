@@ -23,13 +23,16 @@ public class TeamRequest {
     @Enumerated(EnumType.STRING)
     @Column(name = "Status", length = 20, nullable = false)
     private RequestStatus status = RequestStatus.PENDING;
-    @Column(name = "SenderId", nullable = false)
-    private  long senderId;
-    @Column(name = "ReceiverID", nullable = false)
-    private Long receiverId;
 
-    @Column(name = "TeamId", nullable = false)
-    private Long teamId;
+    @ManyToOne
+    @JoinColumn(name = "SenderId", nullable = false)
+    private  User sender;
+    @ManyToOne
+    @JoinColumn (name = "ReceiverID", nullable = false)
+    private User receiver;
+    @ManyToOne
+    @JoinColumn (name = "TeamId", nullable = false)
+    private Team team;
     //JOIN_REQUEST , INVATION ,  LEAVE_REQUEST, TEAM_SUBMISSION
     @Enumerated(EnumType.STRING)
     @Column(name = "Type", length = 255, nullable = false)
@@ -37,12 +40,7 @@ public class TeamRequest {
 
 
 
-    public TeamRequest(long senderId, long receiverId, long teamId, RequestType type) {
-        this.senderId = senderId;
-        this.receiverId = receiverId;
-        this.teamId = teamId;
-        this.type = type;
-    }
+
 
 
 }

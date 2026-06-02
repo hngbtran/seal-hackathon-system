@@ -3,6 +3,7 @@ package com.minhtung.hackathon.entity;
 
 import com.minhtung.hackathon.enums.Role;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 
 import java.time.LocalDateTime;
 
@@ -14,6 +15,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id ;
     @Column(name = "UserName",nullable = false , unique = true)
+
 
     private String username ;
     @Column(name = "Password",nullable = false)

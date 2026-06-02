@@ -3,10 +3,16 @@ package com.minhtung.hackathon.entity;
 
 import com.minhtung.hackathon.enums.TeamStatus;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
 @Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Team {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,8 +26,10 @@ public class Team {
     private TeamStatus status = TeamStatus.OPEN;
     @Column(name = "CreateAt" , nullable = false )
     private LocalDate createAt = LocalDate.now() ;
-    @Column(name = "LeaderId",length =  10 )
-    private int leaderID ;
+
+    @ManyToOne
+    @JoinColumn(name = "LeaderId" )
+    private User leader ;
    @Column(name = "InviteCode",nullable = false,unique = true)
 
     private String inviteCode ;
@@ -33,99 +41,5 @@ public class Team {
     private Integer competitionStatus ;
 
 
-    public Team() {
-    }
 
-    public Team(String name, int leaderID, String inviteCode) {
-        this.name = name;
-        this.leaderID = leaderID;
-        this.inviteCode = inviteCode;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public TeamStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(TeamStatus status) {
-        this.status = status;
-    }
-
-    public LocalDate getCreateAt() {
-        return createAt;
-    }
-
-    public void setCreateAt(LocalDate createAt) {
-        this.createAt = createAt;
-    }
-
-    public int getLeaderID() {
-        return leaderID;
-    }
-
-    public void setLeaderID(int leaderID) {
-        this.leaderID = leaderID;
-    }
-
-    public String getInviteCode() {
-        return inviteCode;
-    }
-
-    public void setInviteCode(String inviteCode) {
-        this.inviteCode = inviteCode;
-    }
-
-    public Integer getTrackint() {
-        return trackint;
-    }
-
-    public void setTrackint(Integer trackint) {
-        this.trackint = trackint;
-    }
-
-    public Integer getColum() {
-        return colum;
-    }
-
-    public void setColum(Integer colum) {
-        this.colum = colum;
-    }
-
-    public Integer getCompetitionStatus() {
-        return competitionStatus;
-    }
-
-    public void setCompetitionStatus(Integer competitionStatus) {
-        this.competitionStatus = competitionStatus;
-    }
-
-    @Override
-    public String toString() {
-        return "Team{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", status=" + status +
-                ", createAt=" + createAt +
-                ", leaderID=" + leaderID +
-                ", inviteCode='" + inviteCode + '\'' +
-                ", trackint=" + trackint +
-                ", colum=" + colum +
-                ", competitionStatus=" + competitionStatus +
-                '}';
-    }
 }

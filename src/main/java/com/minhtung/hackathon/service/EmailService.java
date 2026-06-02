@@ -1,6 +1,6 @@
 package com.minhtung.hackathon.service;
 
-import com.google.gson.JsonObject;
+
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Value ;
 
@@ -25,8 +25,10 @@ public class EmailService {
     String verifLink = baseUrl + "/auth/verify?token=" + token;
 
     try {
-      MimeMessage message = mailSender.createMimeMessage();
-      MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+      MimeMessage message = mailSender.createMimeMessage();//tao phong bia
+      MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8"); //ten can dien , cho phep html , ho tro tieng viet de ko bi loi form
+
+
       helper.setFrom("mtung638@gmail.com");
       helper.setTo(email);
       helper.setSubject("Xác  nhận đăng kí tài khoản");

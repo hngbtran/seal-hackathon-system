@@ -14,23 +14,33 @@ import java.util.Optional;
 @Repository
 public interface TeamRequestRepository  extends JpaRepository<TeamRequest,Long> {
 
-     //lấy lời mời đang chờ của 1 user (gửi mã xác nhận qua gmail)
+     List<TeamRequest> findByReceiver_IdAndTypeAndStatus(
+             Long receiverId,
+             RequestType type,
+             RequestStatus status
+     );
 
-     List<TeamRequest> findByReceiverIdAndTypeAndStatus(Long receiverId, RequestType type, RequestStatus status);
-     //lay join request dang cho của 1 dôi (leader_xem )
-     List<TeamRequest> findByTeamIdAndTypeAndStatus(Long teamId , RequestType type  , RequestStatus status) ;
+     List<TeamRequest> findByTeam_IdAndTypeAndStatus(
+             Long teamId,
+             RequestType type,
+             RequestStatus status
+     );
 
-
-     //kiem tra da gui request loại nay chưa tránh spam
-     boolean existsBySenderIdAndTeamIdAndTypeAndStatus(long senderId , long teamId , RequestType type ,  RequestStatus status);
-
-
-
-
-
-
-
-
-
-
+     boolean existsBySender_IdAndTeam_IdAndTypeAndStatus(
+             Long senderId,
+             Long teamId,
+             RequestType type,
+             RequestStatus status
+     );
 }
+
+
+
+
+
+
+
+
+
+
+

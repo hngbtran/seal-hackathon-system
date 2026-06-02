@@ -8,12 +8,14 @@ import com.minhtung.hackathon.enums.Role;
 import com.minhtung.hackathon.repository.UserRepository;
 import com.minhtung.hackathon.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -30,6 +32,10 @@ public class AuthService {
     public String register(String username , String email , String  password){
         if(userRepository.existsByEmail(email)){
             return "Email nay da duoc su dung " ;
+        }
+
+        if(userRepository.existsByUsername(username)){
+            return "ten nay da duoc dang ki roi " ;
         }
         //xoa pending cu neu co (Dang ki lai)
         User user = new User() ;
@@ -91,6 +97,18 @@ public class AuthService {
                 user.getUsername(),
                 "Dang nhap thanh cong"
         );
+    }
+
+
+    //ham nay de check sau 15p ko an xác nhan éail thi xoa khoi database User
+    @Scheduled(fixedDelay = 60000)//nhu la mot ong bao ve sẽ kiem tra server moi 60 s
+    public void deletedExpiredUser(){
+        List<User> expiredUser = userRepository.findByActiveFalseAndExpiredAtBefore(LocalDateTime.now()) ;
+
+        if(!expiredUser.isEmpty()){
+            userRepository.deleteAll(expiredUser);
+
+        }
     }
 
 }

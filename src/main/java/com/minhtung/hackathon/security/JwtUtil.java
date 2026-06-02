@@ -31,6 +31,8 @@ public class JwtUtil {
         return (String) parseClaims(token).get("role");
     }
 
+
+    //ham nay dung de giai ma token
     private Claims parseClaims(String token){
         return Jwts.parserBuilder()
                 .setSigningKey(getKey())
