@@ -3,6 +3,7 @@ import formInputStyles from './FormInput.module.css'
 import styles from './FormTextarea.module.css'
 
 function FormTextarea({
+    className,
   label,
   required,
   hint,
@@ -38,7 +39,7 @@ function FormTextarea({
           </span>
         )}
         <textarea
-          className={styles.textarea}
+          className={`${styles.textarea} ${className}`}
           name={name}
           value={value}
           onChange={onChange}

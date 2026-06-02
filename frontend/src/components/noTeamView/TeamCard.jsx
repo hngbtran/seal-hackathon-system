@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { ArrowRight, ArrowLeft, PaperPlaneTilt, CrownSimple, Plus } from '@phosphor-icons/react'
+import { ArrowRight, ArrowLeft, PaperPlaneTilt, CrownSimple, Plus, ListPlus } from '@phosphor-icons/react'
 import Button from '../shared/Button'
+import FormTextarea from '../shared/FormTextarea'
 import styles from './TeamCard.module.css'
 import memberStyles from '../leaderView/MemberRow.module.css'
 import memberEmptyStyles from '../leaderView/EmptyMemberSlot.module.css'
@@ -99,14 +100,21 @@ function TeamCard({
                 <div className={styles.panel}>
                     <h3 className={styles.composeTitle}>Gửi yêu cầu xin vào đội</h3>
 
-                    <div className={styles.messageBox}>
+                    {/* <div className={styles.messageBox}>
                         <textarea
                             className={styles.textarea}
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
                             rows={5}
                         />
-                    </div>
+                    </div> */}
+                    <FormTextarea 
+                        className={styles.textarea}
+                        iconLeft={ListPlus}
+                        value={message}
+                        maxLength={200}
+                        onChange={(e) => setMessage(e.target.value)}>
+                    </FormTextarea>
 
                     <div className={styles.composeActions}>
                         <Button
