@@ -5,9 +5,11 @@ import FindTeamSection from '../components/noTeamView/FindTeamSection'
 import InviteTeamCard from '../components/noTeamView/InviteTeamCard'
 import RequestTeamCard from '../components/noTeamView/RequestTeamCard'
 import styles from './LeaderView.module.css'
-// <<<<<<< HEAD
 import { useEffect } from 'react'
 import axios from 'axios'
+import JoinTeamFlow from '../components/joinFlow/JoinTeamFlow'
+// <<<<<<< HEAD
+
 // import JoinTeamFlow from '../components/joinFlow/JoinTeamFlow'
 
 
@@ -119,7 +121,7 @@ function NoTeamView() {
     }
   });
 
-// if (showFlow) return <JoinTeamFlow onClose={() => setShowFlow(false)} />
+if (showFlow) return <JoinTeamFlow onClose={() => setShowFlow(false)} />
 
   return (
     <EventLayout>
