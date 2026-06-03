@@ -75,6 +75,6 @@ h2 {
 }
 
 .scrollbar {
-  scrollbar-gutter: stable both-edges;
+  /* scrollbar-gutter: stable both-edges; */
   scrollbar-color: var(--color-secondary-blue) transparent;
 }

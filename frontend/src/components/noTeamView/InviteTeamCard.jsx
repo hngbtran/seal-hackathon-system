@@ -4,7 +4,7 @@ import Button from '../shared/Button'
 import RequestDetailModal from '../leaderView/RequestDetailModal'
 import { EnvelopeSimple } from '@phosphor-icons/react'
 
-function InviteTeamCard({ invites, onAccept, onReject }) {
+function InviteTeamCard({ invites = [], onAccept, onReject }) {
   const [selectedInvite, setSelectedInvite] = useState(null)
 
   // Map lại thông tin của invite cho đúng với các thông tin sẽ gửi đến cái RequestDetailModal
@@ -13,6 +13,8 @@ function InviteTeamCard({ invites, onAccept, onReject }) {
     id: inv.id,
     name: inv.teamName,
     email: `${inv.memberCount}/${inv.maxSlots} thành viên`,
+    // Bên NoTeamView truyền invite vào chứa các dữ liệu liên quan tới một team
+    // Bên này map chúng thành một array để gửi quá bên RequestDetailModal
     team: {                              
       name: inv.teamName,
       maxSlots: inv.maxSlots,

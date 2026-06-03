@@ -22,19 +22,23 @@ const FAKE_TEAMS = Array.from({ length: 6 }, (_, i) => ({
 }))
 
 const FAKE_INVITES = [
-  { id: 1, teamName: 'Tên đội', memberCount: 2, maxSlots: 4, message: 'Xin chào...' },
-]
-
-const FAKE_INVITE = {
-    id: 1,
-    message: 'XXXXXXXXXXXXXXX',
-    team: {
-        name: 'Tên đội',
+    {
+        id: 1,
+        teamName: 'Pixel Pioneers',
+        memberCount: 3,
         maxSlots: 4,
-        members: [{ id: 1 }, { id: 2 }, { id: 3 }],
-        description: 'Giới thiệu ngắn về đội của bạn và định hướng giải quyết bài toán.',
-    }
-}
+        description: 'Team mình thiên về UI/UX và frontend, mong muốn tìm hướng tiếp cận bài toán từ góc độ trải nghiệm người dùng.',
+        message: 'Xin chào! Mình thấy profile của bạn rất phù hợp với định hướng của team. Rất mong bạn cân nhắc tham gia cùng tụi mình nhé!',
+    },
+    {
+        id: 2,
+        teamName: 'Code Breakers',
+        memberCount: 2,
+        maxSlots: 4,
+        description: 'Nhóm mình chủ yếu làm backend, đang cần thêm người có thể đảm nhận phần giao diện.',
+        message: 'Hi bạn! Team mình đang thiếu một frontend developer. Bạn có muốn join không?',
+    },
+]
 
 const FAKE_REQUESTS = [
   { id: 1, teamName: 'Tên đội', memberCount: 2, maxSlots: 4 },

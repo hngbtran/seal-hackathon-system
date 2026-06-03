@@ -39,7 +39,7 @@ function FormTextarea({
           </span>
         )}
         <textarea
-          className={`${styles.textarea} ${className}`}
+          className={`${styles.textarea} ${className} ${'scrollbar'}`}
           name={name}
           value={value}
           onChange={onChange}

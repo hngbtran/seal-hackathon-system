@@ -4,6 +4,8 @@
     justify-content: center;
     gap: 1.5em;
     width: 100%;
+    max-width: 700px;
+    margin: auto;
 }
 
 /* Progress */

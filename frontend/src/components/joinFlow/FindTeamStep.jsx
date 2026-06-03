@@ -3,7 +3,7 @@ import ModalShell from '../shared/ModalShell'
 import StepFooter from '../shared/StepFooter'
 import CardSearchBase from '../shared/CardSearchBase'
 import TeamCard from '../noTeamView/TeamCard'
-import styles from '../leaderView/FindMemberModal.module.css'
+import styles from '../shared/CardSearchBase.module.css'
 
 const PAGE_SIZE = 6
 
@@ -106,7 +106,7 @@ export const FAKE_TEAMS = [
     },
 ]
 
-function FindTeamStep({ onClose, onBack, onSubmit }) {
+function FindTeamStep({ onClose, onBack, onSubmit, standalone = false }) {
     const [search, setSearch]           = useState('')
     const [fptOnly, setFptOnly]         = useState(false)
     const [currentPage, setCurrentPage] = useState(1)
@@ -137,19 +137,20 @@ function FindTeamStep({ onClose, onBack, onSubmit }) {
 
     return (
         <ModalShell
-            onClose={onClose}
-            closeOnBackdrop={false}
+            onClose={() => { onClose() }}
             size=""
-            footer={
-                <StepFooter
-                    currentStep={3}
-                    totalSteps={3}
-                    stepLabel="Xin vào đội"
-                    onBack={onBack}
-                    onNext={() => onSubmit({ requests })}
-                    nextLabel="Xác nhận"
-                    nextDisabled={!hasRequested}
-                />
+            footer={standalone 
+                ? null
+                :
+                    <StepFooter
+                        currentStep={3}
+                        totalSteps={3}
+                        stepLabel="Xin vào đội"
+                        onBack={onBack}
+                        onNext={() => onSubmit({ requests })}
+                        nextLabel="Xác nhận"
+                        nextDisabled={!hasRequested}
+                    />
             }
         >
             <div className={styles.findTeamContent}>
