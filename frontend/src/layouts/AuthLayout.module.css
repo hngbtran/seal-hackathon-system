@@ -20,6 +20,7 @@
 .card {
     width: 100%;
     max-width: 750px;
+    height: fit-content;
 
     background: white;
     border-radius: var(--radius);

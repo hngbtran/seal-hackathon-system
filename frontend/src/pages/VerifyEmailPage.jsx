@@ -39,7 +39,7 @@ function VerifyEmailPage() {
         <AuthLayout>
             <div className={styles.wrapper}>
                 <h1 className={`${styles.title} ${'icon-label'}`}>
-                    <EnvelopeSimple size={32} />
+                    <EnvelopeSimple size={36} />
                     Xác nhận địa chỉ email
                 </h1>
 
