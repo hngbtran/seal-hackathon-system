@@ -31,9 +31,9 @@ import axios from 'axios'
 
 
 // const FAKE_INVITES = [
-//   { id: 1, name: 'Bùi Thiên Khánh', email: 'btkhanh123@gmail.com' },
-//   { id: 2, name: 'Phạm Khắc Đăng Khoa', email: 'khoapham4676@gmail.com' },
-//   { id: 3, name: 'Mạc Minh Tùng', email: 'mtung638@gmail.com' },
+//   { id:1, memberId: .., name: 'Bùi Thiên Khánh', email: 'btkhanh123@gmail.com' },
+//   {  id: 2, memberId:.., name: 'Phạm Khắc Đăng Khoa', email: 'khoapham4676@gmail.com' },
+//   { id: 3, memberId:.., name: 'Mạc Minh Tùng', email: 'mtung638@gmail.com' }
 // ]
 
 
@@ -87,7 +87,7 @@ function LeaderView() {
   }, []);
 
 
-  // api teamLeader xem những join request gửi đến mình 
+  // api teamLeader xem những join request gửi đến team này 
   useEffect(() => {
     axios
       .get('http://localhost:8080/api/teamrequest/joinrequest'
@@ -185,18 +185,17 @@ function LeaderView() {
 });
 
 
-const handleCancel = ((requestId) => {
+const handleCancel = ((memberId) => {
   // 1. Hiển thị hộp thoại xác nhận trước khi gửi yêu cầu hủy/xóa
-  alert(requestId);
+  alert(memberId);
   if (confirm('Bạn có chắc chắn muốn hủy lời mời này không?')) {
-    alert(requestId);
+    alert(memberId);
     axios
-      .delete('http://localhost:8080/api/teamrequest/invitation', {
+      .delete(`http://localhost:8080/api/teamrequest/invitation-bymember?memberId=${memberId}`, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
-        },
-        data: requestId 
+        }
       })
       .then((response) => {
         console.log(response.data);
@@ -342,6 +341,9 @@ const handleCancel = ((requestId) => {
               onAccept={(id) => handleOnAccept(id, true)}
               onReject={(id) => handleOnReject(id, false)}
             />
+            {/* truyền vào danh sách lờiời đã gởi đi của leader
+                cái id mà truyền vô cho onCancel là id của teamRequest để khi hủy sẽ gọi API xóa teamRequest đó đi
+            */}
             <InviteCard
               invites={FAKE_INVITES}
               onCancel={(id) =>handleCancel(id)}

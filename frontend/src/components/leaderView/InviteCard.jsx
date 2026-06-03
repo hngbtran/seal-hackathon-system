@@ -17,7 +17,7 @@ function InviteCard({ invites, onCancel }) {
           labelSize={16}
           variant="outline"
           color='orange'
-          onClick={() => onCancel(item.id)}
+          onClick={() => onCancel(item.memberId)}
         />
       )}
     />

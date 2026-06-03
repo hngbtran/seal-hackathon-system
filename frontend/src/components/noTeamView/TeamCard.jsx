@@ -39,7 +39,7 @@ function TeamCard({
 
     function handleCancel() {
         const token = localStorage.getItem("accessToken");
-        axios.delete(`http://localhost:8080/api/teamrequest/request?teamId=${team.id}`,
+        axios.delete(`http://localhost:8080/api/teamrequest/member-request?teamId=${team.id}`,
             { headers: { Authorization: `Bearer ${token}` } }
         )
             .then(() => {

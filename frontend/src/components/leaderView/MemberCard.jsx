@@ -15,7 +15,7 @@ function MemberCard({ member, onInvite, onCancel }) {
     const token = localStorage.getItem("accessToken");
     function handleSend() {
         console.log("member =", member);
-console.log("sending id =", member.id);
+        console.log("sending id =", member.id);
         axios.post('http://localhost:8080/api/teamrequest/invitation',
             { id: member.id, message: message },
             { headers: { Authorization: `Bearer ${token}` } }
@@ -23,7 +23,7 @@ console.log("sending id =", member.id);
             .then(() => {
                 onInvite(member.id, message)
                 setCardState('invited')
-                window.location.reload();
+                // window.location.reload();
             })
             .catch((error) => {
                 console.log(error);
@@ -34,9 +34,16 @@ console.log("sending id =", member.id);
     // ham cancel invite
 
     function handleCancel() {
-
-        onCancel(member.id)
-        setCardState('view')
+        axios.delete(`http://localhost:8080/api/teamrequest/invitation-bymember?memberId=${member.id}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+        )
+            .then(() => {
+                onCancel(member.id)
+                setCardState('view')
+            })
+            .catch((error) => {
+                console.log(error);
+            })
     }
 
     return (
@@ -123,7 +130,7 @@ console.log("sending id =", member.id);
                             variant="primary"
                             onClick={handleSend}
                         />
-                    </div>  
+                    </div>
                 </div>
 
             </div>

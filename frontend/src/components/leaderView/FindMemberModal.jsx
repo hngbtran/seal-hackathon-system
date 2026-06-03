@@ -13,6 +13,10 @@ function FindMemberModal({ onClose }) {
   const [invitedIds, setInvitedIds] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
 
+  // trang leader thì lấy danh sách lời mời để show bằng request id của teamRequest
+  // nhưng ở đây là trang tìm kiếm thành viên mời vào team nên lấy cái id lên là id của user
+    
+
    // lay danh sach free user trong he thong
   const [FAKE_MEMBERS, setFAKE_MEMBERS] = useState([]);
   const token = localStorage.getItem("accessToken") 
@@ -48,6 +52,12 @@ function FindMemberModal({ onClose }) {
           Tìm và mời thành viên vào đội của bạn. Lời mời sẽ được gửi đến và người nhận có thể chấp nhận hoặc từ chối.
         </p>
 
+      {/* -bên đây là truyền vào 1 danh sách những FREE member nhung người chưa có đội để leader mời
+          -cái id lấy lên là ID của USER đó
+          -NHƯNG MÀ cái nút onCancel ở đây lại truyền vào cái id của user đó.
+          -Khi bấm xóa thì xuống api sẽ ko gọi được vì API cần request id
+          -Anh thắc mắc cái onCancle này có link với onCancel ở InviteCard trong LeaderView không
+      ) */}
         <CardSearchBase
           items={FAKE_MEMBERS}
           renderCard={(member) => (
