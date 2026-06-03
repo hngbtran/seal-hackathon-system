@@ -55,8 +55,23 @@
     flex: 1;
 }
 
+.title {
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin: 1em 0 0.5em;
+    color: var(--color-primary-green);
+}
+
 .content {
     display: flex;
     flex-direction: column;
     gap: 1em;
+}
+
+.teamInfoCard {
+    border-radius: var(--radius);
+    border: 1px solid var(--color-border-blue);
+    background-color: var(--color-bg-blue);
+    padding: 2em;
+    margin: 1em 0;
 }

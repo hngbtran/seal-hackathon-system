@@ -24,6 +24,18 @@ const FAKE_TEAMS = Array.from({ length: 6 }, (_, i) => ({
 const FAKE_INVITES = [
   { id: 1, teamName: 'Tên đội', memberCount: 2, maxSlots: 4, message: 'Xin chào...' },
 ]
+
+const FAKE_INVITE = {
+    id: 1,
+    message: 'XXXXXXXXXXXXXXX',
+    team: {
+        name: 'Tên đội',
+        maxSlots: 4,
+        members: [{ id: 1 }, { id: 2 }, { id: 3 }],
+        description: 'Giới thiệu ngắn về đội của bạn và định hướng giải quyết bài toán.',
+    }
+}
+
 const FAKE_REQUESTS = [
   { id: 1, teamName: 'Tên đội', memberCount: 2, maxSlots: 4 },
   { id: 2, teamName: 'Tên đội', memberCount: 3, maxSlots: 4 },
