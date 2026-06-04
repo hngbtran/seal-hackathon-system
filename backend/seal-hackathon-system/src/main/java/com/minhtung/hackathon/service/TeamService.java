@@ -82,7 +82,7 @@ public class TeamService {
 
 
                 //luu teamRequest loai invitation(nguoi duoc moi can bam dong y de duoc tham gia vao team
-                TeamRequest invitenation = new TeamRequest(leaderId, invitedUsers.getId(), team.getId(), RequestType.INVITATION, "Ban Duoc" + leader.getFullName() + "Moi vao team " + team.getName());
+                TeamRequest invitenation = new TeamRequest(leaderId, invitedUsers.getId(), team.getId(), RequestType.INVITATION, "Bạn được " + leader.getFullName() + " Mời vào team " + team.getName());
                 teamRequestRepository.save(invitenation);
             }
         }
@@ -207,12 +207,17 @@ public class TeamService {
     }
 
     //leader xem nhung invitation da gui di
+    //fix tinh nang lai la view qua teamId chu ko phai view qua senderId
     public List<LeaderInvitationResponse> leaderViewInvitation(long userId) {
         Member leader = memberRepository.findByMemberID(userId).orElseThrow();
         if (leader.getRole() != MemberRole.LEADER) {
             throw new IllegalArgumentException("Bạn không phải leader");
         }
-        List<TeamRequest> teamRequests = teamRequestRepository.findByTypeAndStatusAndSenderId(RequestType.INVITATION, RequestStatus.PENDING, userId);
+        Team team = teamRepository.findByLeaderID(leader.getId()).orElse(null);
+        if (team == null || team.getStatus() != TeamStatus.OPEN) {
+            throw new IllegalArgumentException("leader ko ton tai hoac team ko open");
+        }
+        List<TeamRequest> teamRequests = teamRequestRepository.findByTypeAndStatusAndTeamId(RequestType.INVITATION, RequestStatus.PENDING, team.getId());
         List<LeaderInvitationResponse> responseList = new ArrayList<>();
         for (TeamRequest teamRequest : teamRequests) {
             LeaderInvitationResponse leaderInvitationResponse = new LeaderInvitationResponse();
@@ -395,7 +400,10 @@ public class TeamService {
             return "ban ko co quyen thuc hien chuc nang nay";
         }
 
-        User user = userRepository.findById(teamRequest.getSenderId()).orElseThrow();
+        User user = userRepository.findById(teamRequest.getSenderId()).orElse(null);
+        if (user == null) {
+            throw new IllegalArgumentException("User not found");
+        }
 
         if (acp) {
             memberRepository.save(new Member(
