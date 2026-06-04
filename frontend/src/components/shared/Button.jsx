@@ -32,7 +32,7 @@ function Button({
             )}
 
             <span style={{ fontSize: `${labelSize}px` }}>{label}</span>
-
+ 
             {Icon && iconPosition === 'right' && (
                 <span className={styles.icon}>
                     <Icon size={iconSize} weight={iconWeight} />

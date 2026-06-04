@@ -12,6 +12,8 @@ function Navbar({ isLoggedIn, user }) {
                 alt="SEAL Hackathon typography logo"
             />
 
+    {/* chưa có chỗ để khởi động 2 button login  */}
+    {/* nếu chưa login hiện navbar này -- ko thì hiện user menu dropdown */}
             <div className={styles.rightSection}>
                 {!isLoggedIn ? (
                     <div className={styles.rightSectionContent}>

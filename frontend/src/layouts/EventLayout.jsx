@@ -7,15 +7,16 @@ function EventLayout({ children }) {
     // Note: Sau này gắn React Router vào thì đổi thành navigate('/')
     console.log('về dashboard')
   }
+  const userInfo=localStorage.getItem('userInfo')? JSON.parse(localStorage.getItem('userInfo')): null
 
   return (
     <div className={styles.root}>
       <Navbar 
         isLoggedIn={true}
         user={{
-          name: 'Nguyễn Thành Thái',
-          email: 'ntbi533@gmail.com',
-          avatar: null
+          name:userInfo? userInfo.fullname : 'Nguyen Van A',
+          email: userInfo? userInfo.email : 'nguyenvana@example.com',
+          avatar: userInfo? userInfo.avatar : null
         }}
 
       />
