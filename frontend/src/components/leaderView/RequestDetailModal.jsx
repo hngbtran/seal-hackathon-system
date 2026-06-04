@@ -31,13 +31,13 @@ function RequestDetailModal({
             label="Từ chối"
             variant="outline"
             color='grey'
-            onClick={() => { onReject(request.id); onClose() }}
+            onClick={() => { onReject(data.id); onClose() }}
           />
           <Button
             label="Đồng ý"
             variant="primary"
             color='green'
-            onClick={() => { onAccept(request.id); onClose() }}
+            onClick={() => { onAccept(data.id); onClose() }}
           />
         </div>
       }

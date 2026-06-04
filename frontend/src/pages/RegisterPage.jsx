@@ -43,7 +43,6 @@ function RegisterPage() {
         const e2 = validate()
         if (Object.keys(e2).length > 0) { setErrors(e2); return }
 
-        setLoading(true)
         try {
             const res = await fetch('http://localhost:8080/api/auth/register', {
                 method: 'POST',
@@ -67,9 +66,9 @@ function RegisterPage() {
             // navigate('/verify-email', { state: { email: form.email } })
 
         } catch {
-            setErrors({ submit: 'Không thể kết nối tới máy chủ' })
+            console.log('Lỗi kết nối server')
         } finally {
-            setLoading(false)
+            console.log(form)
         }
     }
 

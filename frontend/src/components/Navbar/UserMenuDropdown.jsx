@@ -39,7 +39,7 @@ function UserMenuDropdown({ name, email, avatar }) {
                         <p className={styles.email}>{email}</p>
                     </div>
 
-                    <hr className={styles.divider}/>
+                    <hr className={styles.divider} />
 
                     <ul className={styles.menu}>
                         <li className={`icon-label ${styles.menuItem}`}>
@@ -48,20 +48,25 @@ function UserMenuDropdown({ name, email, avatar }) {
                         </li>
 
                         <li className={`icon-label ${styles.menuItem}`}>
-                            <Question size={24} color='var(--color-primary-blue)'/>
+                            <Question size={24} color='var(--color-primary-blue)' />
                             <span>Hỗ trợ</span>
                         </li>
 
                         <li className={styles.divider}></li>
 
                         <li>
-                            <Button 
+                            <Button
                                 label='Đăng xuất'
-                                labelSize={14}  
+                                labelSize={14}
                                 icon={SignOut}
                                 variant='outline'
-                                color='orange' 
-                                onClick={() => {}}
+                                color='orange'
+                                onClick={() => {
+                                    localStorage.removeItem('accessToken')
+                                    localStorage.removeItem('userInfo')
+                                    window.location.href = '/login'
+
+                                }}
                             />
                         </li>
                     </ul>

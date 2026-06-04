@@ -44,11 +44,12 @@ function InviteTeamCard({ invites = [], onAccept, onReject }) {
         )}
       />
 
+      {/* ở đây chưa biết là invite hay request cần 1 props để truyền vào */}
       <RequestDetailModal
         invite={selectedInvite}
         isTeamInvite
-        onAccept={(id) => console.log('Đồng ý lời mời:', id)}
-        onReject={(id) => console.log('Từ chối lời mời:', id)}
+        onAccept={onAccept}
+        onReject={onReject}
         onClose={() => setSelectedInvite(null)}
       />
 

@@ -8,7 +8,7 @@ import styles from './CreateTeamStep.module.css'
 
 const MAX_MEMBERS = 4   // kể cả bản thân
 
-function CreateTeamStep({ onClose, onBack, onSubmit, currentUserEmail = 'ntbi533@gmail.com' }) {
+function CreateTeamStep({ onClose, onBack, onSubmit, currentUserEmail =localStorage.getItem('userInfo') ? JSON.parse(localStorage.getItem('userInfo')).email : 'Email không xác định' }) {
     const [name, setName] = useState('')
     const [desc, setDesc] = useState('')
     const [emails, setEmails] = useState([''])  // danh sách email mời (không kể bản thân)

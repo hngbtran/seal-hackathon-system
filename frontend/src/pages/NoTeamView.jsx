@@ -275,6 +275,31 @@ function NoTeamView() {
   }, []);
 
 
+  // api sinh vien accept invitation
+  const userHandleInvitation = (requestId,isAccepted) => {
+    axios
+      .put('http://localhost:8080/api/teamrequest/invitation-response', {
+        requestId: requestId,
+        accept: isAccepted
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      })
+      .then((response) => {
+        console.log(response.data);
+        alert("Đã chấp nhận lời mời thành công!");
+        // window.location.reload();
+      })
+      .catch((error) => {
+        console.log(error);
+        alert("Có lỗi xảy ra khi chấp nhận lời mời!");
+      });
+}
+
+
+
   // api sinh vien huy request da gui di
 
   const handleCancel = ((requestId) => {
@@ -328,13 +353,13 @@ function NoTeamView() {
                     <div className={styles.side}>
                         <InviteTeamCard
                             invites={FAKE_INVITES}
-                            onAccept={(id) => console.log('đồng ý', id)}
-                            onReject={(id) => console.log('từ chối', id)}
+                            onAccept={(id) => userHandleInvitation(id, true)}
+                            onReject={(id) => userHandleInvitation(id, false)}
                         />
 
                         <RequestTeamCard
                             requests={FAKE_REQUESTS}
-                            onCancel={(id) => console.log('hủy', id)}
+                            onCancel={(id) =>handleCancel(id)}
                         />
                     </div>
 
