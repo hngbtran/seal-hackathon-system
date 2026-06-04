@@ -1,9 +1,9 @@
 .counter {
-    width: 4rem;
-    height: 5rem;
+    width: 3.5rem;
+    height: 4.5rem;
     border-radius: var(--inner-radius);
     overflow: hidden;
-    background: var(--color-primary-blue);
+    background: var(--color-primary-orange);
 }
 
 .scene {
@@ -27,7 +27,7 @@
     align-items: center;
     justify-content: center;
 
-    font-size: 2rem;
+    font-size: 1.8rem;
     font-weight: bold;
     font-family: var(--title-font-main);
     color: #ffffff;
