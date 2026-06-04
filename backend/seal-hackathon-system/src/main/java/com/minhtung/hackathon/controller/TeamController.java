@@ -90,7 +90,7 @@ public class TeamController {
 
 
     //    tim kiem team by name
-    @Operation(summary = "Tim kiem doi OPEN theo ten ")
+    @Operation(summary = "Tim kiem doi OPEN theo ten")
     @GetMapping("/search")
     public ResponseEntity<List<CreateTeamResponse>> search(@RequestParam String keyword) {
         return ResponseEntity.ok(teamService.searchTeam(keyword));
@@ -224,6 +224,8 @@ public class TeamController {
         return ResponseEntity.status(401).body("Token không hợp lệ");
     }
 
+
+    //get team info
     @GetMapping("/team-info")
     public ResponseEntity<?> getTeamInfo(@RequestHeader("Authorization") String auth) {
         Integer uid = getUid(auth);
@@ -239,6 +241,7 @@ public class TeamController {
         }
     }
 
+    // check name
     @GetMapping("/check-name")
     public ResponseEntity<?> checkname(@RequestHeader("Authorization") String auth, @RequestParam("name") String name) {
         Integer uid = getUid(auth);
@@ -247,14 +250,14 @@ public class TeamController {
         }
 
         try {
-            return ResponseEntity.ok().body(teamService.checkName(uid, name));
+            return ResponseEntity.ok().body(teamService.checkName(  name));
         } catch (IllegalArgumentException e) {
             // Nếu không tìm thấy thành viên, trả về lỗi 404 kèm thông báo công khai
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
 
-    //lay FAKE RESULTS BY CODE
+    //lay FAKE RESULTS BY CODE check code
     @GetMapping("/check-code")
     public ResponseEntity<?> checkcode(@RequestHeader("Authorization") String auth, @RequestParam("code") String code) {
         Integer uid = getUid(auth);

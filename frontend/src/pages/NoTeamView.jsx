@@ -10,6 +10,7 @@ import { useEffect } from 'react'
 import axios from 'axios'
 import CreateTeamStep from '../components/joinFlow/CreateTeamStep'
 import JoinByCodeStep from '../components/joinFlow/JoinByCodeStep'
+import { data } from 'react-router-dom'
 // import JoinTeamFlow from '../components/noTeamView/JoinTeamFlow'
 
 // function NoTeamView() {
@@ -220,6 +221,7 @@ function NoTeamView() {
       )
       .then((response) => {
         setFAKE_INVITES(response.data);
+      
       })
       .catch((error) => console.log(error));
   }, []);
@@ -333,25 +335,44 @@ function NoTeamView() {
   });
   const [showCreateTeam, setShowCreateTeam] = useState(false)
   const [showJoinByCode, setShowJoinByCode] = useState(false)
+  const [emailStatus, setEmailStatus] = useState('default')
+  const [emailMessage, setEmailMessage] = useState('')
 
 
 
-
-  if (showCreateTeam) return <CreateTeamStep onClose={() => setShowCreateTeam(false)}
+  if (showCreateTeam) return <CreateTeamStep emailStatus={emailStatus} emailMessage={emailMessage} onClose={() => setShowCreateTeam(false)}
     onSubmit={(data) => {
 
       axios.post('http://localhost:8080/api/team/create', data, {
         headers: { Authorization: `Bearer ${token}` }
       })
         .then(() => {
-          // window.location.reload();
+          setEmailMessage('Email hợp lệ')
+          setEmailStatus('default')
+                 window.location.reload();
         })
         .catch((error) => {
-          console.log(error);
+          setEmailMessage('Email ko hợp lệ hoặc đã tồn tại')
+          setEmailStatus('error')
+          console.log(error)
         })
     }}
   />
-  if (showJoinByCode) return <JoinByCodeStep onClose={() => setShowJoinByCode(false)} />
+  if (showJoinByCode) return <JoinByCodeStep onClose={() => setShowJoinByCode(false)}
+    onSubmit={(data) => {
+
+      axios.post('http://localhost:8080/api/team/join-by-code', data, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then((response) => {
+          console.log(response.data)
+        })
+        .catch((error) => {
+        console.log(error)
+        })
+    }}
+
+  />
   return (
     <EventLayout>
       <div className={styles.page}>

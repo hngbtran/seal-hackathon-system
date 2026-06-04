@@ -64,6 +64,7 @@ function JoinByCodeStep({ onClose, onBack, onSubmit }) {
 
             }
             setFAKE_RESULTS(responseData)
+            
         })
         const found = FAKE_RESULTS[code.trim().toUpperCase()] // truy cập thuộc tính của object bằng key
         setResult(found ?? { type: 'invalid' }) // nếu found khác null khác undifined thì dùng found
@@ -88,7 +89,7 @@ function JoinByCodeStep({ onClose, onBack, onSubmit }) {
                     totalSteps={3}
                     stepLabel="Nhập mã mời"
                     onBack={onBack}
-                    onNext={() => onSubmit({ code, team: result?.team })}
+                    onNext={() => onSubmit({inviteCode:code})}
                     nextLabel="Xác nhận"
                     nextDisabled={!canConfirm}
                 />

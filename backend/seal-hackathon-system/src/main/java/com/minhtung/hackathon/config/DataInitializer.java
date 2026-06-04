@@ -8,6 +8,7 @@ import com.minhtung.hackathon.repository.TeamRepository;
 import com.minhtung.hackathon.repository.UserRepository;
 import com.minhtung.hackathon.service.TeamService;
 import lombok.RequiredArgsConstructor;
+import org.checkerframework.checker.units.qual.C;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -29,6 +30,7 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         if (userRepository.count() == 0) {
+//           ----------------các thành viên chưa có team----------------------------------
             User user1 = new User();
             user1.setEmail("user1@gmail.com");
             user1.setPassword("123456");
@@ -73,45 +75,74 @@ public class DataInitializer implements CommandLineRunner {
             user5.setSchoolName("Trường đại học Bách Khoa HCM");
             user5.setActive(true);
             userRepository.save(user5);
+            //  ----------------team 4 đã đủ maxSlot-----------------------
 
             User user6 = new User();
-            user6.setFullName("Người số 6");
-            user6.setEmail("user6@gmail.com");
+            user6.setFullName("Nguyễn Văn Leader Team Một");
+            user6.setEmail("user11@gmail.com");
             user6.setPassword("123456");
             user6.setRole(Role.USER);
             user6.setSchoolName("Trường đại học Bách Khoa HCM");
             user6.setActive(true);
             userRepository.save(user6);
-            List<String> emails = new ArrayList<>();
-            emails.add("user2@gmail.com"); //gửi invitation đến user1
-//            emails.add("user3@gmail.com"); //gửi invitation đến user1
+            User user7 = new User();
+            user7.setFullName("Nguyễn Văn Member2 Team Một");
+            user7.setEmail("user12@gmail.com");
+            user7.setPassword("123456");
+            user7.setRole(Role.USER);
+            user7.setSchoolName("Trường đại học Bách Khoa HCM");
+            user7.setActive(true);
+            userRepository.save(user7);
+            User user8 = new User();
+            user8.setFullName("Nguyễn Văn Member3 Team Một");
+            user8.setEmail("user13@gmail.com");
+            user8.setPassword("123456");
+            user8.setRole(Role.USER);
+            user8.setSchoolName("Trường đại học Bách Khoa HCM");
+            user8.setActive(true);
+            userRepository.save(user8);
+            User user9 = new User();
+            user9.setFullName("Nguyễn Văn Member4 Team Một");
+            user9.setEmail("user14@gmail.com");
+            user9.setPassword("123456");
+            user9.setRole(Role.USER);
+            user9.setSchoolName("Trường đại học Bách Khoa HCM");
+            user9.setActive(true);
+            userRepository.save(user9);
             teamService.createTeam(new CreateTeamDto(
-                    "Team của Bảo Trân","Đây là team của Bảo Trân ạ.",emails
-                    ), user5.getId());
+                    "SEAL HACKER", "Chào bạn bọn mình là sinh viên năm 3 chuyên nghành ATTT.", Collections.emptyList()
+            ), user6.getId());
+            teamService.joinTeamByCode(
+                    teamRepository.findByLeaderID(user6.getId()).get().getInviteCode(),user7.getId());
+            teamService.joinTeamByCode(
+                    teamRepository.findByLeaderID(user6.getId()).get().getInviteCode(),user8.getId());
+            teamService.joinTeamByCode(
+                    teamRepository.findByLeaderID(user6.getId()).get().getInviteCode(),user9.getId());
 
+//            ------team 2 đang có 2 thành viên-------
+                    User user10 = new User();
+            user10.setFullName("Nguyễn Văn Leader Team Hi");
+            user10.setEmail("usert21@gmail.com");
+            user10.setPassword("123456");
+            user10.setRole(Role.USER);
+            user10.setSchoolName("Trường đại học FPT");
+            user10.setActive(true);
+            userRepository.save(user10);
+            User user11 = new User();
+            user11.setFullName("Nguyễn Văn Member Team Hi");
+            user11.setEmail("usert22@gmail.com");
+            user11.setPassword("123456");
+            user11.setRole(Role.USER);
+            user11.setSchoolName("Trường đại học FPT");
+            user11.setActive(true);
+            userRepository.save(user11);
             teamService.createTeam(new CreateTeamDto(
-                    "Team cua khanh","Đây là team của Khanh ạ.", Collections.emptyList()
-            ), user1.getId());
-            //hard code cho user2 vào team bằng mã team
-//            teamService.joinTeamByCode(
-//                    teamRepository.findByLeaderID(user5.getId()).get().getInviteCode(),
-//                    user2.getId()
-//            );
-//            teamService.joinTeamByCode(
-//                    teamRepository.findByLeaderID(user5.getId()).get().getInviteCode(),
-//                    user3.getId()
-//            );
-//            teamService.joinTeamByCode(
-//                    teamRepository.findByLeaderID(user5.getId()).get().getInviteCode(),
-//                    user1.getId()
-//            );
-            //hard code cho user4 send 1 join team request đến team của khánh
-//            teamService.sendJoinRequest(
-//                    new JoinTeamRequest(
-//                            teamRepository.findByLeaderID(user1.getId()).get().getId()
-//                            , "Khoa xin vào đội ạ"),
-//                    user4.getId()
-//            );
+                    "FPT CÓC CAM", "Nhóm mình tìm kiếm 1 bạn nữ frontend (không frontend cũng được), để quản lý tụi mình ạ.", Collections.emptyList()
+            ), user10.getId());
+            teamService.joinTeamByCode(
+                    teamRepository.findByLeaderID(user10.getId()).get().getInviteCode(),user11.getId());
+
+
 
         }
     }

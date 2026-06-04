@@ -20,8 +20,8 @@ public interface MemberRepository extends JpaRepository<Member,Long> {
 
     boolean existsByTeamIdAndMemberIDAndStatus(Long teamId , long MemberId , boolean status) ;
     //tim member by id
-    Optional<Member> findByMemberID(long MemberId );
     //tim leader by id
+    Optional<Member> findByMemberIDAndStatus(long MemberId,boolean status );
     Optional<List<Member>> findByTeamId(Long teamId );
 
     //đếm số lượng thành viên trong team trạng thái active

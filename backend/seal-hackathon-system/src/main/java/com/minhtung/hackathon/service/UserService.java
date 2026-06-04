@@ -31,6 +31,10 @@ public class UserService {
     public List<SearchMemberResponse> getMemberNoTeam(long leaderId) {
         List<User> freeUsers = userRepository.findUsersWithoutTeam(Role.USER);
         Team team = teamRepository.findByLeaderID(leaderId).orElse(null);
+        int memberCount = memberRepository.countByTeamIdAndStatus(team.getId(), true);
+        if (memberCount == 4) {
+            return Collections.emptyList();
+        }
         if (team == null) {
             return Collections.emptyList();
         }
@@ -39,12 +43,12 @@ public class UserService {
         }
         List<SearchMemberResponse> members = new ArrayList<>();
         for (User user : freeUsers) {
-            TeamRequest invitation=teamRequestRepository.findByReceiverIdAndTeamIdAndTypeAndStatus(user.getId(),team.getId(), RequestType.INVITATION, RequestStatus.PENDING).orElse(null);
+            TeamRequest invitation = teamRequestRepository.findByReceiverIdAndTeamIdAndTypeAndStatus(user.getId(), team.getId(), RequestType.INVITATION, RequestStatus.PENDING).orElse(null);
 
-            TeamRequest joinRequest =teamRequestRepository.findBySenderIdAndTeamIdAndTypeAndStatus(user.getId(),team.getId(), RequestType.JOIN_REQUEST, RequestStatus.PENDING).orElse(null);
-             if(joinRequest!=null || invitation!=null){
-                 continue;
-             }
+            TeamRequest joinRequest = teamRequestRepository.findBySenderIdAndTeamIdAndTypeAndStatus(user.getId(), team.getId(), RequestType.JOIN_REQUEST, RequestStatus.PENDING).orElse(null);
+            if (joinRequest != null || invitation != null) {
+                continue;
+            }
             SearchMemberResponse response = new SearchMemberResponse();
             response.setId(user.getId());
             response.setEmail(user.getEmail());

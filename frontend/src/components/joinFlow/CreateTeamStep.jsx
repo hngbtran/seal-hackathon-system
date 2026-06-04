@@ -9,12 +9,16 @@ import axios from 'axios'
 
 const MAX_MEMBERS = 4   // kể cả bản thân
 
-function CreateTeamStep({ onClose, onBack, onSubmit, currentUserEmail = localStorage.getItem('userInfo') ? JSON.parse(localStorage.getItem('userInfo')).email : 'Email không xác định' }) {
+function CreateTeamStep({ onClose, onBack, onSubmit, currentUserEmail = localStorage.getItem('userInfo') ? JSON.parse(localStorage.getItem('userInfo')).email : 'Email không xác định',
+    emailStatus, emailMessage
+
+}) {
     const [name, setName] = useState('')
     const [desc, setDesc] = useState('')
     const [emails, setEmails] = useState([''])  // danh sách email mời (không kể bản thân)
     const [nameStatus, setNameStatus] = useState('default')
     const [nameMessage, setNameMessage] = useState('')
+
 
     // Thêm ô email mới
     function handleAddEmail() {
@@ -43,8 +47,11 @@ function CreateTeamStep({ onClose, onBack, onSubmit, currentUserEmail = localSto
             headers: { Authorization: `Bearer ${token}` }
         }).then((response) => {
             if (response.data == false) {
-             setNameStatus('error')
-             setNameMessage('tên đội đã tồn tại') 
+                setNameStatus('error')
+                setNameMessage('tên đội đã tồn tại')
+            } else {
+                setNameStatus('success')
+                setNameMessage('tên đội hợp lệ')
             }
         }).catch((error) => {
             console.log(error)
@@ -134,6 +141,8 @@ function CreateTeamStep({ onClose, onBack, onSubmit, currentUserEmail = localSto
                             onChange={e => handleEmailChange(index, e.target.value)}
                             actionIcon={Backspace}                          // ← icon ngoài input
                             onActionIconClick={() => handleRemoveEmail(index)}
+                            status={emailStatus}
+                            message={emailMessage}
                         />
                     </div>
                 ))}

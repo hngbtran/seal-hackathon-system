@@ -9,6 +9,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class joinByCode {
-    private String inviteCode ;
+        private String inviteCode ;
 
 }

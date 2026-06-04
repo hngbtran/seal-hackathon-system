@@ -14,7 +14,7 @@ import java.util.Optional;
 
 @Repository
 public interface TeamRepository extends JpaRepository<Team,Long> {
-    Optional<Team> findByInviteCode(String inviteCode) ;
+    Optional<Team> findByInviteCodeAndStatus(String inviteCode, TeamStatus status) ;
 
     List<Team>findByNameContainingIgnoreCaseAndStatus(String name , TeamStatus status) ;
     boolean existsByInviteCode(String inviteCode);
@@ -33,5 +33,5 @@ public interface TeamRepository extends JpaRepository<Team,Long> {
     List<Team> findTeamsWithLessThanFourMembers();
 
     //get team by Name ignore case
-    Optional<Team> findByNameContainingIgnoreCase(String teamName);
+    Optional<Team> findByNameIgnoreCaseAndStatus(String teamName, TeamStatus status);
 }

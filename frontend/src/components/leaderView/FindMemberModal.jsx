@@ -21,6 +21,7 @@ function FindMemberModal({ onClose }) {
   const [FAKE_MEMBERS, setFAKE_MEMBERS] = useState([]);
   const token = localStorage.getItem("accessToken") 
     useEffect(() => {
+      // nếu team đã đủ người thì trả về mảng rỗng 
       axios
         .get('http://localhost:8080/api/user/free-users'
           , {

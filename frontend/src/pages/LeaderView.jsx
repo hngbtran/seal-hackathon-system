@@ -314,7 +314,7 @@ const handleCancel = ((memberId) => {
 
         {/* cần truyền vào teamName ,description, teamCode */}
         <TeamInfoHeader
-          teamname={teamInfo.teamName}
+          teamName={teamInfo.teamName}
           description={teamInfo.description}
           teamCode={teamInfo.teamCode}
           onFindMember={() => console.log('mở popup tìm thành viên')}
