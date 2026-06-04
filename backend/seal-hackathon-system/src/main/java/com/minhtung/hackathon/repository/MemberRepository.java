@@ -13,7 +13,7 @@ import java.util.Optional;
 @Repository
 public interface MemberRepository extends JpaRepository<Member,Long> {
 
-    List<Member> findByTeamIdAndStatus(Integer teamId, boolean status);
+    List<Member> findByTeamIdAndStatus(long teamId, boolean status);
 
 
     Optional<Member> findByTeamIdAndMemberID(Long teamId , long MemberID);

@@ -70,20 +70,20 @@ public class TeamController {
         }
     }
 
-   //    Needing member teams
+    //    Needing member teams
     @GetMapping("/needing-members")
     @Operation(summary = "Lay nhung team dang thieu thanh vien")
     public ResponseEntity<?> getTeamsNeedingMembers(
             @RequestHeader("Authorization") String auth
     ) {
         Integer uid = getUid(auth);
-        if (uid == null){
+        if (uid == null) {
             return unauthorized();
 
-        }try {
-            return ResponseEntity.ok().body(teamService.getNeedMemberTeams(uid));
         }
-        catch (IllegalArgumentException e) {
+        try {
+            return ResponseEntity.ok().body(teamService.getNeedMemberTeams(uid));
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -139,8 +139,7 @@ public class TeamController {
         }
         try {
             return ResponseEntity.ok().body(teamService.promoteMember(memberId, uid));
-        }
-        catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
 
@@ -233,7 +232,7 @@ public class TeamController {
         }
 
         try {
-           return ResponseEntity.ok().body(teamService.getTeamInfo(uid));
+            return ResponseEntity.ok().body(teamService.getTeamInfo(uid));
         } catch (IllegalArgumentException e) {
             // Nếu không tìm thấy thành viên, trả về lỗi 404 kèm thông báo công khai
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
@@ -241,7 +240,7 @@ public class TeamController {
     }
 
     @GetMapping("/check-name")
-    public ResponseEntity<?> checkname(@RequestHeader("Authorization") String auth, @RequestParam("name")  String name) {
+    public ResponseEntity<?> checkname(@RequestHeader("Authorization") String auth, @RequestParam("name") String name) {
         Integer uid = getUid(auth);
         if (uid == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token không hợp lệ");
@@ -255,9 +254,15 @@ public class TeamController {
         }
     }
 
-
-
-
+    //lay FAKE RESULTS BY CODE
+    @GetMapping("/check-code")
+    public ResponseEntity<?> checkcode(@RequestHeader("Authorization") String auth, @RequestParam("code") String code) {
+        Integer uid = getUid(auth);
+        if (uid == null) {
+            return unauthorized();
+        }
+        return ResponseEntity.ok().body(teamService.checkCode(code));
+    }
 
 
 }

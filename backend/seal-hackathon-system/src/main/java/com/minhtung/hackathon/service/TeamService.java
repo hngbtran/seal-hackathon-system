@@ -10,10 +10,7 @@ import com.minhtung.hackathon.entity.Member;
 import com.minhtung.hackathon.entity.Team;
 import com.minhtung.hackathon.entity.TeamRequest;
 import com.minhtung.hackathon.entity.User;
-import com.minhtung.hackathon.enums.MemberRole;
-import com.minhtung.hackathon.enums.RequestStatus;
-import com.minhtung.hackathon.enums.RequestType;
-import com.minhtung.hackathon.enums.TeamStatus;
+import com.minhtung.hackathon.enums.*;
 import com.minhtung.hackathon.repository.MemberRepository;
 import com.minhtung.hackathon.repository.TeamRepository;
 import com.minhtung.hackathon.repository.TeamRequestRepository;
@@ -805,4 +802,44 @@ public class TeamService {
         return false;
     }
 
+
+    //    search join team by code
+    public SearchTeamByCodeResponse checkCode(String code) {
+        // tìm team đó
+        // ko tìm đc trả về invalid
+        // team đã đủ 4 người trả về full
+        Team team = teamRepository.findByInviteCode(code).orElse(null);
+        SearchTeamByCodeResponse searchTeamByCodeResponse = new SearchTeamByCodeResponse();
+        if (team == null) {
+          searchTeamByCodeResponse.setType("invalid");
+          return searchTeamByCodeResponse;
+        }
+        int memberCount = memberRepository.countByTeamIdAndStatus(team.getId(),true);
+        if(memberCount==4){
+            searchTeamByCodeResponse.setType("full");
+        }else{
+            searchTeamByCodeResponse.setType("found");
+        }
+
+        TeamByCodeResponse teamByCodeResponse = new TeamByCodeResponse();
+        teamByCodeResponse.setTeamName(team.getName());
+        teamByCodeResponse.setDescription(team.getDescription());
+        teamByCodeResponse.setMemberCount(memberCount);
+        teamByCodeResponse.setMaxSlots(4);
+
+        // add nhung member vo
+        List<Member> members =memberRepository.findByTeamIdAndStatus(team.getId(),true);
+        for (Member member : members) {
+            MemberByCodeResponse memberByCodeResponse = new MemberByCodeResponse();
+            memberByCodeResponse.setMemberId(member.getId());
+            if (member.getRole() == MemberRole.LEADER) {
+                memberByCodeResponse.setLeader(true);
+            }
+            teamByCodeResponse.addMember(memberByCodeResponse);
+        }
+        searchTeamByCodeResponse.setTeamCode(team.getInviteCode());
+        searchTeamByCodeResponse.setTeam(teamByCodeResponse);
+
+    return   searchTeamByCodeResponse;
+    }
 }

@@ -73,28 +73,45 @@ public class DataInitializer implements CommandLineRunner {
             user5.setSchoolName("Trường đại học Bách Khoa HCM");
             user5.setActive(true);
             userRepository.save(user5);
+
+            User user6 = new User();
+            user6.setFullName("Người số 6");
+            user6.setEmail("user6@gmail.com");
+            user6.setPassword("123456");
+            user6.setRole(Role.USER);
+            user6.setSchoolName("Trường đại học Bách Khoa HCM");
+            user6.setActive(true);
+            userRepository.save(user6);
             List<String> emails = new ArrayList<>();
-            emails.add("user3@gmail.com"); //gửi invitation đến user1
-            emails.add("user2@gmail.com"); // gửi in..... đến user 2
+            emails.add("user2@gmail.com"); //gửi invitation đến user1
+//            emails.add("user3@gmail.com"); //gửi invitation đến user1
             teamService.createTeam(new CreateTeamDto(
-                    "Data Flow","Đây là team của Bảo Trân ạ.",emails
+                    "Team của Bảo Trân","Đây là team của Bảo Trân ạ.",emails
                     ), user5.getId());
 
             teamService.createTeam(new CreateTeamDto(
-                    "Team 2","Đây là team của Khanh ạ.", Collections.emptyList()
+                    "Team cua khanh","Đây là team của Khanh ạ.", Collections.emptyList()
             ), user1.getId());
             //hard code cho user2 vào team bằng mã team
-            teamService.joinTeamByCode(
-                    teamRepository.findByLeaderID(user5.getId()).get().getInviteCode(),
-                    user2.getId()
-            );
+//            teamService.joinTeamByCode(
+//                    teamRepository.findByLeaderID(user5.getId()).get().getInviteCode(),
+//                    user2.getId()
+//            );
+//            teamService.joinTeamByCode(
+//                    teamRepository.findByLeaderID(user5.getId()).get().getInviteCode(),
+//                    user3.getId()
+//            );
+//            teamService.joinTeamByCode(
+//                    teamRepository.findByLeaderID(user5.getId()).get().getInviteCode(),
+//                    user1.getId()
+//            );
             //hard code cho user4 send 1 join team request đến team của khánh
-            teamService.sendJoinRequest(
-                    new JoinTeamRequest(
-                            teamRepository.findByLeaderID(user1.getId()).get().getId()
-                            , "Khoa xin vào đội ạ"),
-                    user4.getId()
-            );
+//            teamService.sendJoinRequest(
+//                    new JoinTeamRequest(
+//                            teamRepository.findByLeaderID(user1.getId()).get().getId()
+//                            , "Khoa xin vào đội ạ"),
+//                    user4.getId()
+//            );
 
         }
     }
