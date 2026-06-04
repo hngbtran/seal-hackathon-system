@@ -2,10 +2,9 @@ import { useState, useEffect } from 'react'
 import Counter from './Counter'
 import styles from './Countdown.module.css'
 
-const TARGET = new Date('2026-09-01T00:00:00')
+function getTimeLeft(targetDate) {
+    const distance = targetDate - new Date()
 
-function getTimeLeft() {
-    const distance = TARGET - new Date()
     if (distance < 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 }
     return {
         days:    Math.floor(distance / (1000 * 60 * 60 * 24)),
@@ -24,11 +23,14 @@ function Countdown( {target} ) {
     const [time, setTime] = useState(getTimeLeft(target))
 
     useEffect(() => {
-        const timer = setInterval(() => setTime(getTimeLeft()), 1000)
+        setTime(getTimeLeft(target)) 
+        // cập nhật ngay khi target thay đổi, tránh trường hợp user chuyển tab quá lâu -> countdown bị sai lệch
+
+        const timer = setInterval(() => setTime(getTimeLeft(target)), 1000)
         return () => clearInterval(timer) 
         // khi user chuyển trang -> component Countdown bị xóa, 
         // nhưng Countdown vẫn chạy ngầm nếu không clearInterval -> Tốn bộ nhớ, gây giật lag nếu xài web lâu 
-    }, [])
+    }, [target])
 
     return (
         <div className={styles.countdown}>
