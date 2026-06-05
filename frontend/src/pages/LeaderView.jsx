@@ -302,9 +302,9 @@ const handleCancel = ((memberId) => {
   }
 };
 
-const handleOnEdit = () => { }
+const handleOnEdit = (id) => { } // TODO: Xử lí chỉnh sửa thông tin đội
 
-const handleOnApproveLeave = () => { }
+const handleOnApproveLeave = (id) => { } // TODO: Xử lí rời đội
 
 
   return (
@@ -319,6 +319,7 @@ const handleOnApproveLeave = () => { }
           teamName={teamInfo.teamName}
           description={teamInfo.description}
           teamCode={teamInfo.teamCode}
+          isLeader
           onEdit={() => console.log('mở popup chỉnh sửa thông tin đội')}
           onFindMember={() => console.log('mở popup tìm thành viên')}
         />
@@ -335,7 +336,7 @@ const handleOnApproveLeave = () => { }
               onLockTeam={() => setTeamStatus('waiting')}
               onKick={(id) => handleOnKick(id)}
               onPromote={(id) => handleOnPromote(id)}
-              onApproveLeave={(id) => handleOnApproveLeave(id)} // TODO: Xử lí rời đội
+              onApproveLeave={(id) => handleOnApproveLeave(id)} 
               onLeave={handleOnLeave}
             />
           </div>

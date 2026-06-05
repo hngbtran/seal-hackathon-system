@@ -14,11 +14,11 @@ function NoticeBox({
         <div className={styles.left}>
           <span className={styles.icon}><Icon size={32}/></span>
           <span className={styles.message}>{message}</span>
-          <div className={styles.divider} />
         </div>
 
         {button && (
           <>
+              <div className={styles.divider} />
               <div className={styles.right}>{button}</div>
           </>
         )}

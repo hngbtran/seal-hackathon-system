@@ -6,7 +6,7 @@ import FindMemberModal from './FindMemberModal'
 import EditTeamInformationModal from './EditTeamInformationModal';
 import Tooltip from '../shared/Tooltip';
 
-function TeamInfoHeader({ teamId, teamName, description, teamCode, isLeader = true, onEdit }) {
+function TeamInfoHeader({ teamId, teamName, description, teamCode, isLeader, onEdit }) {
     const [showModal, setShowModal] = useState(false)
     const [showEditModal, setShowEditModal] = useState(false)
     function handleCopyCode() {

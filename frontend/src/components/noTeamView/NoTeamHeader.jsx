@@ -17,26 +17,26 @@ function NoTeamHeader({ onCreateTeam, onEnterCode }) {
                     Ngoài ra, bạn có thể tự tạo team hoặc nhập mã mời từ bạn bè.
                 </p>
             </div>
+            <div className={styles.divider}></div>
+            <div>
 
-                <div>
-
-                    <Button
-                        className={styles.btn}
-                        label="Tạo đội"
-                        icon={UserPlus}
-                        iconPosition="left"
-                        variant='primary'
-                        color='green'
-                        onClick={onCreateTeam}
-                    />
-                    <Button
-                        className={styles.btn}
-                        label="Nhập mã"
-                        icon={Hash}
-                        iconPosition="left"
-                        variant="outline"
-                        onClick={onEnterCode}
-                    />
+                <Button
+                    className={styles.btn}
+                    label="Tạo đội"
+                    icon={UserPlus}
+                    iconPosition="left"
+                    variant='primary'
+                    color='green'
+                    onClick={onCreateTeam}
+                />
+                <Button
+                    className={styles.btn}
+                    label="Nhập mã"
+                    icon={Hash}
+                    iconPosition="left"
+                    variant="outline"
+                    onClick={onEnterCode}
+                />
 
             </div>
 
