@@ -36,6 +36,8 @@ public class TeamService {
 
     //tao 1 team moi
 
+
+    // fix quăng lỗi của mail (chưa làm)
     @Transactional
     public CreateTeamResponse createTeam(CreateTeamDto create, long leaderId) {
         User leader = userRepository.findById(leaderId).orElse(null);
@@ -55,8 +57,11 @@ public class TeamService {
         List<String> userEmails = create.getInviteEmails();
         for (String email : userEmails) {
             User member = userRepository.findByEmail(email).orElse(null);
-            if (member == null || member.getEmail().equals(leader.getEmail())) {
+            if (member == null ) {
                 throw new IllegalArgumentException("email bạn mời không tồn tại");
+            }
+            if (member.getEmail().equals(leader.getEmail())) {
+                throw new IllegalArgumentException("Không thể nhập email của chính mình");
             }
         }
         String inviteCode = generateUniqueInviteCode();
@@ -66,7 +71,7 @@ public class TeamService {
 
         memberRepository.save(new Member(MemberRole.LEADER, true, team.getId(), leaderId, leader.getSchoolName(), leader.getFullName(), leader.getEmail()));
 
-
+        // email list
         List<String> emails = create.getInviteEmails();
         if (emails != null) {
 
@@ -77,6 +82,13 @@ public class TeamService {
 
                 // lay user duoc moi neu khong thi tra ve message
                 User invitedUsers = userRepository.findByEmail(email.trim()).orElse(null);
+                if(invitedUsers == null) {
+                    throw new IllegalArgumentException("user email ban moi khong ton tai");
+                }
+                Member member=memberRepository.findByMemberIDAndStatus(invitedUsers.getId(),true).orElse(null);
+                if(member!=null) {
+                    throw new IllegalArgumentException("user email ban moi da tham gia doi khac roi");
+                }
 
 
                 //luu teamRequest loai invitation(nguoi duoc moi can bam dong y de duoc tham gia vao team
@@ -739,6 +751,7 @@ public class TeamService {
             NeedMemberTeamResponse needMemberTeamResponse = new NeedMemberTeamResponse();
             needMemberTeamResponse.setTeamId(team.getId());
             needMemberTeamResponse.setTeamName(team.getName());
+            needMemberTeamResponse.setDescription(team.getDescription());
             for (Member member : memberList) {
                 //ai đã out rồi thì bỏ qua
                 if (!member.isStatus()) {

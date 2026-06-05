@@ -22,6 +22,9 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
 
+
+
+    //encoder o day
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

@@ -14,6 +14,8 @@ import java.util.List;
 public class NeedMemberTeamResponse {
     @JsonProperty("id")
     private long teamId;
+    @JsonProperty("description")
+    private String description;
     @JsonProperty("name")
     private String teamName;
     private List<TeamMemberResponse> members = new ArrayList<>();
