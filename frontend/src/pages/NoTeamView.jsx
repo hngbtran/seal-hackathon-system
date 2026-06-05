@@ -101,7 +101,7 @@ function NoTeamView() {
       })
       .then((response) => {
         console.log(response.data);
-        alert("thành công!");
+        alert("Thành công!");
         window.location.reload();
       })
       .catch((error) => {
@@ -162,7 +162,7 @@ function NoTeamView() {
                  window.location.reload();
         })
         .catch((error) => {
-          setEmailMessage('Email ko hợp lệ hoặc đã tồn tại')
+          setEmailMessage('Email không hợp lệ hoặc đã tồn tại')
           setEmailStatus('error')
           console.log(error)
         })

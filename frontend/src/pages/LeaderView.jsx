@@ -303,31 +303,34 @@ const handleCancel = ((memberId) => {
 };
 
 
-
+const handleOnEdit = () => { }
 
 
   return (
     <EventLayout>
-      <div classname={styles.page}>
+      <div className={styles.page}>
 
         {/* Thanh info đội — full width */}
 
         {/* cần truyền vào teamName ,description, teamCode */}
         <TeamInfoHeader
+          teamId={teamInfo.id}
           teamName={teamInfo.teamName}
           description={teamInfo.description}
           teamCode={teamInfo.teamCode}
+          onEdit={() => console.log('mở popup chỉnh sửa thông tin đội')}
           onFindMember={() => console.log('mở popup tìm thành viên')}
         />
 
         {/* 2 cột bên dưới */}
-        <div classname={styles.content}>
+        <div className={styles.content}>
 
-          <div classname={styles.main}>
+          <div className={styles.main}>
             <TeamMemberPanel
               members={FAKE_MEMBERS}
               maxSlots={4}
               teamStatus={teamStatus}
+              isLeader
               onLockTeam={() => setTeamStatus('waiting')}
               onKick={(id) => handleOnKick(id)}
               onPromote={(id) => handleOnPromote(id)}
@@ -335,7 +338,7 @@ const handleCancel = ((memberId) => {
             />
           </div>
 
-          <div classname={styles.side}>
+          <div className={styles.side}>
             <RequestCard
               requests={FAKE_REQUESTS}
               onAccept={(id) => handleOnAccept(id, true)}
