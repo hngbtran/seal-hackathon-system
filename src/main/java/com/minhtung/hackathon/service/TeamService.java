@@ -63,7 +63,7 @@ public class TeamService {
         leaderMember.setTeam(team);
         leaderMember.setMember(leader);
         memberRepository.save(leaderMember);
-        // Gửi INVITATION trong app (không gửi email)
+
         List<Long> memberIds = create.getMemberId();
         if (memberIds != null) {
             int limit = Math.min(memberIds.size(), 3); // duoc toi da 3 nguoi thoi vi leader la 1 roi
@@ -107,7 +107,7 @@ public class TeamService {
     public String joinTeamByCode(String inviteCode,Long userId) {
         Team team = teamRepository.findByInviteCode(inviteCode).orElse(null);
         if (team == null) {
-            return "Mã mời không hợp lệ hoặc không  tồn tại";
+            return "Mã mời  không  tồn tại";
 
         }
 
@@ -200,10 +200,16 @@ public class TeamService {
 
             }
             //khuc nay la do leader duyet
-            if (teamRequestRepository.existsBySender_IdAndTeam_IdAndTypeAndStatus(userId, teamId, RequestType.JOIN_REQUEST, RequestStatus.PENDING)){
+            if (teamRequestRepository.existsBySender_IdAndTeam_IdAndTypeAndStatus(userId, teamId, RequestType.JOIN_REQUEST, RequestStatus.PENDING)) {
                 ;
-            return " bạn đã  yeu cau  leader duyệt";
-        }
+                return " bạn đã  yeu cau  leader duyệt";
+
+            }
+            if(teamRequestRepository.existsBySender_IdAndTypeAndStatus(userId,RequestType.JOIN_REQUEST,RequestStatus.PENDING)){
+                return "Bạn đã có yêu cầu xin vào đội đang chờ duyệt, không thể gửi thêm";
+            };
+
+
 
             TeamRequest request = new TeamRequest();
             request.setSender(user);
@@ -232,6 +238,7 @@ public class TeamService {
             return "loi moi da duoc xu ly roi";
 
         }
+
 
         Team team = req.getTeam();
         if (!acp) {
@@ -489,5 +496,6 @@ public class TeamService {
                 memberCount
         );
     }
+    //"hahah"
 
 }

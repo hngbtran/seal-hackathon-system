@@ -164,7 +164,7 @@ public class TeamController {
         try {
             String username = SecurityContextHolder.getContext()
                     .getAuthentication().getName();
-            return userRepository.findByUsername(username)
+            return userRepository.findByFullName(username)
                     .map(User::getId)
                     .orElse(null);
         } catch (Exception e) {

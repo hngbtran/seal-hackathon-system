@@ -21,7 +21,7 @@ public class Member {
 
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "Role " , nullable = false)
+    @Column(name = "Role" , nullable = false)
     private MemberRole role ;
 
 

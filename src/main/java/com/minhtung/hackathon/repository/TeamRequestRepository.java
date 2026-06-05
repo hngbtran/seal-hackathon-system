@@ -32,6 +32,12 @@ public interface TeamRequestRepository  extends JpaRepository<TeamRequest,Long> 
              RequestType type,
              RequestStatus status
      );
+
+     boolean existsBySender_IdAndTypeAndStatus(
+             Long senderId,
+             RequestType type,
+             RequestStatus status
+     );
 }
 
 

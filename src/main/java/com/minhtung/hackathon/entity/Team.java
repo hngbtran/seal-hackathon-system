@@ -35,7 +35,7 @@ public class Team {
     private String inviteCode ;
    @Column(name = "TrackInt")
     private Integer trackint ;
-   @Column(name = "colum")
+   @Column(name = "column")
     private Integer colum ;
     @Column(name = "CompetitionStatus")
     private Integer competitionStatus ;

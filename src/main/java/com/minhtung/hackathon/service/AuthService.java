@@ -34,15 +34,15 @@ public class AuthService {
             return "Email nay da duoc su dung " ;
         }
 
-        if(userRepository.existsByUsername(username)){
+        if(userRepository.existsByFullName(username)){
             return "ten nay da duoc dang ki roi " ;
         }
         //xoa pending cu neu co (Dang ki lai)
         User user = new User() ;
-        user.setUsername(username);
+        user.setFullName(username);
         user.setEmail(email);
         user.setPassword(password);
-        user.setActive(false);//chua an xac nhan
+        user.setStatus(false);//chua an xac nhan
         user.setToken(UUID.randomUUID().toString());
         user.setExpiredAt(LocalDateTime.now().plusMinutes(15));
         user.setRole(Role.USER);
@@ -69,7 +69,7 @@ public class AuthService {
             return "Link da het han . Vui long dang ki lai" ;
         }
 
-        user.setActive(true);
+        user.setStatus(true);
         user.setToken(null);
         user.setExpiredAt(null);
         userRepository.save(user) ;
@@ -77,24 +77,24 @@ public class AuthService {
         return "Tai khoan da duoc kich hoat .Ban co the dang nhap ngay " ;
     }
     public LoginResponse login(LoginRequest req){
-        User user = userRepository.findByUsername((req.getUsername())).orElse(null) ;
+        User user = userRepository.findByFullName((req.getUsername())).orElse(null) ;
 
         if(user == null){
             return new LoginResponse(null,null,null,"tai khoan khong ton tai ");
 
         }
-        if(!user.isActive()){
+        if(!user.isStatus()){
             return new LoginResponse(null,null,null,"tai khoan chua duoc kich hoat email ");
         }
         if (!req.getPassword().equals(user.getPassword())) {
             return new LoginResponse(null, null, null, "Mat khau khong chinh xac");
         }
-        String jwt = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
+        String jwt = jwtUtil.generateToken(user.getFullName(), user.getRole().name());
 
         return new LoginResponse(
                 jwt,
                 user.getRole().name(),
-                user.getUsername(),
+                user.getFullName(),
                 "Dang nhap thanh cong"
         );
     }
@@ -103,7 +103,7 @@ public class AuthService {
     //ham nay de check sau 15p ko an xác nhan éail thi xoa khoi database User
     @Scheduled(fixedDelay = 60000)//nhu la mot ong bao ve sẽ kiem tra server moi 60 s
     public void deletedExpiredUser(){
-        List<User> expiredUser = userRepository.findByActiveFalseAndExpiredAtBefore(LocalDateTime.now()) ;
+        List<User> expiredUser = userRepository.findByStatusFalseAndExpiredAtBefore(LocalDateTime.now()) ;
 
         if(!expiredUser.isEmpty()){
             userRepository.deleteAll(expiredUser);

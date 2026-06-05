@@ -1,6 +1,8 @@
 package com.minhtung.hackathon.repository;
 
 import com.minhtung.hackathon.entity.Team;
+import com.minhtung.hackathon.enums.RequestStatus;
+import com.minhtung.hackathon.enums.RequestType;
 import com.minhtung.hackathon.enums.TeamStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -17,6 +19,8 @@ public interface TeamRepository extends JpaRepository<Team,Long> {
     boolean existsByInviteCode(String inviteCode);
 
     List<Team> findByStatus(TeamStatus status);
+
+
 
 
 }
