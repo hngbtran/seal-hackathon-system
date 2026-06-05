@@ -45,31 +45,66 @@ function JoinByCodeStep({ onClose, onBack, onSubmit }) {
     const [result, setResult] = useState(null)
     const [FAKE_RESULTS, setFAKE_RESULTS] = useState({})
     //hàm này truyền 1 code lấy từ ô input --> gửi xún backend nhận lên 1 FAKE_RESULTS
-    function handleCheck() {
-        if (!code.trim()) return
-        axios.get(`http://localhost:8080/api/team/check-code?code=${code}`, {
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}` // nếu có JWT
-            }
-        }).then((response) => {
-            const responseData = {
-             
-                [response.data.teamCode]: {
-                       type: response.data.type,
-                    team: response.data.team
-                },
-                'FULL': { type: 'full' },
-                'INVALID': { type: 'invalid' },
+    // function handleCheck() {
+    //     if (!code.trim()) return
+    //     axios.get(`http://localhost:8080/api/team/check-code?code=${code}`, {
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //             Authorization: `Bearer ${token}` // nếu có JWT
+    //         }
+    //     }).then((response) => {
+    //         const responseData = {
 
-            }
-            setFAKE_RESULTS(responseData)
-            
-        })
-        const found = FAKE_RESULTS[code.trim().toUpperCase()] // truy cập thuộc tính của object bằng key
-        setResult(found ?? { type: 'invalid' }) // nếu found khác null khác undifined thì dùng found
-        // còn không dùng type: 'invalid'    
-    }
+    //             [response.data.teamCode]: {
+    //                 type: response.data.type,
+    //                 team: response.data.team
+    //                 ,
+    //                 'FULL': { type: 'full' },
+    //                 'INVALID': { type: 'invalid' },
+    //             }
+    //         };
+    //         setFAKE_RESULTS(responseData)
+                
+
+    //     })
+    //     const found = FAKE_RESULTS[code.trim().toUpperCase()] // truy cập thuộc tính của object bằng key
+    //     setResult(found ?? { type: 'invalid' }) // nếu found khác null khác undifined thì dùng found
+    //     // còn không dùng type: 'invalid'    
+    // }
+
+  const handleCheck = async () => {
+  if (!code.trim()) return;
+
+  try {
+    const response = await axios.get(
+      `http://localhost:8080/api/team/check-code?code=${code}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const responseData = {
+      [response.data.teamCode]: {
+        type: response.data.type,
+        team: response.data.team,
+      },
+      FULL: { type: "full" },
+      INVALID: { type: "invalid" },
+    };
+
+    setFAKE_RESULTS(responseData);
+
+    const found = responseData[code.trim().toUpperCase()];
+    setResult(found ?? { type: "invalid" });
+
+  } catch (error) {
+    console.error(error);
+    setResult({ type: "invalid" });
+  }
+};
 
 
     function handleCodeChange(e) {
@@ -89,7 +124,7 @@ function JoinByCodeStep({ onClose, onBack, onSubmit }) {
                     totalSteps={3}
                     stepLabel="Nhập mã mời"
                     onBack={onBack}
-                    onNext={() => onSubmit({inviteCode:code})}
+                    onNext={() => onSubmit({ inviteCode: code })}
                     nextLabel="Xác nhận"
                     nextDisabled={!canConfirm}
                 />
