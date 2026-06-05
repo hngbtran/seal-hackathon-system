@@ -15,6 +15,25 @@ function MemberView() {
   const [teamStatus] = useState('pending')
   const [FAKE_MEMBERS, setFAKE_MEMBERS] = useState([]);
   const token = localStorage.getItem("accessToken")
+  const [teamInfo, setTeamInfo] = useState({ teamName: '', description: '', teamCode: '' });
+
+  // api lấy team info
+    useEffect(() => {
+      axios
+        .get('http://localhost:8080/api/team/team-info'
+          , {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}` // nếu có JWT
+            }
+          }
+        )
+        .then((response) => {
+          setTeamInfo(response.data);
+        })
+        .catch((error) => console.log(error));
+    }, []);
+  
 
   // api lấy team members thành viên đội 
   useEffect(() => {
@@ -67,9 +86,8 @@ function MemberView() {
       <div className={styles.page}>
 
         <TeamInfoHeader
-          teamName="Tên đội Tên đội Tên đội"
-          description="Giới thiệu ngắn về đội bạn và định hướng giải quyết bài toán."
-          teamCode="ABCXYZ"
+          teamName={teamInfo.teamName}
+          description={teamInfo.description}
           showFindMember={false}
         />
 

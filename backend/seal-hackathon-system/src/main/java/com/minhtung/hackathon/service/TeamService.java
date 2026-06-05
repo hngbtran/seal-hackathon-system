@@ -325,11 +325,8 @@ public class TeamService {
 
     //sinh vien xoa nhung request den team by team id
     public String deleteRequestByTeamId(long teamId, long userId) {
-            Member member = memberRepository.findByMemberIDAndStatus(userId,true).orElse(null);
-            if (member == null) {
-                throw new IllegalArgumentException("Member Khong Ton Tai");
-            }
-        TeamRequest teamRequest = teamRequestRepository.findBySenderIdAndTeamId(userId, teamId);
+
+        TeamRequest teamRequest = teamRequestRepository.findBySenderIdAndTeamIdAndStatus(userId, teamId,RequestStatus.PENDING);
         if (teamRequest == null) {
             throw new InvalidParameterException("Team Khong Ton Tai");
         }

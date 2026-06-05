@@ -37,7 +37,7 @@ public class DataInitializer implements CommandLineRunner {
             user1.setRole(Role.USER);
             user1.setSchoolName("Trường đại học Hoa Sen");
             user1.setActive(true);
-            user1.setFullName("Bui Thien Khanh");
+            user1.setFullName("Bùi Thiên Khánh");
             userRepository.save(user1);
 
             User user2 = new User();
@@ -46,7 +46,7 @@ public class DataInitializer implements CommandLineRunner {
             user2.setRole(Role.USER);
             user2.setSchoolName("Khoa Học Xã Hội và Nhân Văn");
             user2.setActive(true);
-            user2.setFullName("Mac Minh Tung");
+            user2.setFullName("Mạc Minh Tùng");
             userRepository.save(user2);
 
             User user3 = new User();
@@ -55,7 +55,7 @@ public class DataInitializer implements CommandLineRunner {
             user3.setRole(Role.USER);
             user3.setSchoolName("Trường đại học FPT");
             user3.setActive(true);
-            user3.setFullName("Pham Khac Dang Khoa");
+            user3.setFullName("Phạm Khắc Đăng Khoa");
             userRepository.save(user3);
 
             User user4 = new User();
@@ -64,7 +64,7 @@ public class DataInitializer implements CommandLineRunner {
             user4.setRole(Role.USER);
             user4.setSchoolName("Trường đại học Công Nghiệp");
             user4.setActive(true);
-            user4.setFullName("Nguyen Thanh Thai");
+            user4.setFullName("Nguyễn Thành Thái");
             userRepository.save(user4);
 
             User user5 = new User();

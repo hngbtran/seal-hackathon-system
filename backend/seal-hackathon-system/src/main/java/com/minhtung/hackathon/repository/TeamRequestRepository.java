@@ -45,7 +45,7 @@ public interface TeamRequestRepository  extends JpaRepository<TeamRequest,Long> 
      List<TeamRequest> findBySenderIdOrReceiverId(long senderId, long receiverId);
 
      //tim boi nguoi gui yeu cau va nguoi nhan yeu cau
-     TeamRequest findBySenderIdAndTeamId(long senderId,long teamId);
+     TeamRequest findBySenderIdAndTeamIdAndStatus(long senderId,long teamId,RequestStatus status);
 
      //tim nhung invitation da gui cho nguoi cu the
      List<TeamRequest> findBySenderIdAndReceiverId(long senderId,long receiverId);

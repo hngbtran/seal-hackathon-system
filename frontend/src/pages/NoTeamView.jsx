@@ -291,8 +291,8 @@ function NoTeamView() {
       })
       .then((response) => {
         console.log(response.data);
-        alert("Đã chấp nhận lời mời thành công!");
-        // window.location.reload();
+        alert("thành công!");
+        window.location.reload();
       })
       .catch((error) => {
         console.log(error);
