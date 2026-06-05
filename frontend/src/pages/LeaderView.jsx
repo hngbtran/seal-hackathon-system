@@ -302,8 +302,9 @@ const handleCancel = ((memberId) => {
   }
 };
 
-
 const handleOnEdit = () => { }
+
+const handleOnApproveLeave = () => { }
 
 
   return (
@@ -334,6 +335,7 @@ const handleOnEdit = () => { }
               onLockTeam={() => setTeamStatus('waiting')}
               onKick={(id) => handleOnKick(id)}
               onPromote={(id) => handleOnPromote(id)}
+              onApproveLeave={(id) => handleOnApproveLeave(id)} // TODO: Xử lí rời đội
               onLeave={handleOnLeave}
             />
           </div>

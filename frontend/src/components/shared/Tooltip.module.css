@@ -10,18 +10,18 @@
 
     background: var(--color-primary-blue);
     color: white;
-    font-size: 0.8rem;
-    border-radius: var(--radius);
+    border-radius: var(--inner-radius);
     padding: 0.4em 0.75em;
+
+    font-weight: bold;
 
     pointer-events: none;
 
-    animation: fadeIn 0.12s ease;
+    animation: fadeIn 0.2s ease;
 }
 
-/* Vị trí */
 .top {
-    bottom: calc(100% + 0.5rem);
+    bottom: calc(100% + 0.8rem);
     left: 50%;
     transform: translateX(-50%);
 }
@@ -44,7 +44,6 @@
     transform: translateY(-50%);
 }
 
-/* Mũi tên nhỏ */
 .arrow {
     position: absolute;
     width: 0;
@@ -67,12 +66,46 @@
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+    from { opacity: 0; transform: translateX(-50%) translateY(1em); }
     to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
 /* === VARIANTS === */
 
-.tooltip .white {
+.tooltip.orange {
+    background-color: var(--color-primary-orange);
+}
+.orange.top .arrow, .orange.bottom .arrow {
+    border-top-color: var(--color-primary-orange);
+}
+
+.tooltip.green {
+    background-color: var(--color-primary-green);
+}
+.green.top .arrow, .green.bottom .arrow {
+    border-top-color: var(--color-primary-green);
+}
+
+.tooltip.white {
     background-color: var(--color-bg-white);
+}
+
+.white.top .arrow, .white.bottom .arrow {
+    border-top-color: var(--color-bg-white);
+}
+
+
+
+
+
+p.blue {
+    color: var(--color-primary-blue);
+}
+
+p.orange {
+    color: var(--color-primary-orange);
+}
+
+p.green {
+    color: var(--color-primary-green);
 }

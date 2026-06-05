@@ -4,8 +4,11 @@ import styles from './Tooltip.module.css'
 function Tooltip({ 
     children, 
     content, 
-    position = 'top',
-    color }) {
+    contentSize = 14,
+    bgColor = 'blue', // "blue", "green", "orange", "white"
+    textColor = 'white', // "blue", "green", "orange", "white"
+    position = 'top' // "top", "bottom", "right", "left"
+}) {
     const [visible, setVisible] = useState(false)
 
     if (!content) return children
@@ -19,8 +22,8 @@ function Tooltip({
             {children}
 
             {visible && (
-                <div className={`${styles.tooltip} ${styles[position]} ${styles.color}`}>
-                    {content}
+                <div className={`${styles.tooltip} ${styles[position]} ${styles[bgColor]} `}>
+                    <p className={styles[textColor]} style={{ fontSize: `${contentSize}px`}}>{content}</p>
                     <span className={styles.arrow} />
                 </div>
             )}
