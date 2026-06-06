@@ -6,17 +6,18 @@ const FAKE_USER = {
   avatarUrl: null,
 }
 
-function UserLayout({ children }) {
-  return (
-    <div className={styles.page}>
-      <Navbar isLoggedIn={true} user={FAKE_USER} />
-      <main className={styles.main}>
-        <div className={styles.card}>
-          {children}
+function UserLayout({ children, showCard = true }) {
+    return (
+        <div className={styles.page}>
+            <Navbar isLoggedIn={true} user={FAKE_USER} />
+            <main className={styles.main}>
+                {showCard
+                    ? <div className={styles.card}>{children}</div>
+                    : children
+                }
+            </main>
         </div>
-      </main>
-    </div>
-  )
+    )
 }
 
 export default UserLayout
