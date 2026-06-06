@@ -101,7 +101,7 @@ function NoTeamView() {
       })
       .then((response) => {
         console.log(response.data);
-        alert("thành công!");
+        alert("Thành công!");
         window.location.reload();
       })
       .catch((error) => {
