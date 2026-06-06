@@ -57,7 +57,7 @@ function NoTeamView() {
             id: m.id,
             name: m.name,
             school: m.school,
-            isLeader:m.isLeader
+            isLeader : m.isLeader
           })),
           isRequested: false, // mặc định chưa gửi request tham gia
         }))

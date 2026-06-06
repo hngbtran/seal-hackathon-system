@@ -12,10 +12,10 @@ function JoinByCodeStep({ onClose, onBack, onSubmit }) {
     //team code
     const [code, setCode] = useState('')
     const [result, setResult] = useState(null)
-    // const [FAKE_RESULTS, setFAKE_RESULTS] = useState({})
+
     // hàm này truyền 1 code lấy từ ô input --> gửi xún backend nhận lên 1 FAKE_RESULTS
     function handleCheck() {
-        if (!code.trim()) return
+        if (!code.trim()) return setResult({ type: 'default' })
         axios.get(`http://localhost:8080/api/team/check-code?code=${code}`, {
             headers: {
                 'Content-Type': 'application/json',
@@ -35,7 +35,6 @@ function JoinByCodeStep({ onClose, onBack, onSubmit }) {
             const FAKE_RESULTS = responseData;
             const found = FAKE_RESULTS[code.trim().toUpperCase()] // truy cập thuộc tính của object bằng key
             setResult(found ?? { type: 'invalid' })
-
         })
  
     }
@@ -83,7 +82,7 @@ function JoinByCodeStep({ onClose, onBack, onSubmit }) {
                 onChange={handleCodeChange}
                 onBlur={handleCheck}
                 status={
-                    result?.type === 'fou   nd' ? 'success' :
+                    result?.type === 'found' ? 'success' :
                         result?.type === 'full' ? 'error' :
                             result?.type === 'invalid' ? 'error' :
                                 'default'

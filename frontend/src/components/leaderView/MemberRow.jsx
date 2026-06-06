@@ -1,5 +1,8 @@
+import Tooltip from '../shared/Tooltip'
 import { CrownSimple, X, SignOut } from '@phosphor-icons/react'
 import styles from './MemberRow.module.css'
+import Button from '../shared/Button'
+import avatarPlaceholder from '../../assets/user-avatar-placeholder.png'
 
 function MemberRow({ 
   index, 
@@ -10,7 +13,10 @@ function MemberRow({
   isCurrentUser, 
   onKick, 
   onPromote, 
-  onLeave 
+  onLeave,
+  onCancelLeave,
+  onApproveLeave,
+  leaveRequest, 
 }) {
   return (
     <div className={styles.row}>
@@ -18,6 +24,7 @@ function MemberRow({
       <span className={styles.index}>{index}</span>
 
       <div className={styles.avatar}>
+        <img src={avatarPlaceholder} alt="user avatar placeholder" className={styles.avatarImg}/>
         {isLeader && (
           <CrownSimple size={32} weight="fill" className={styles.crownIcon} />
         )}
@@ -36,21 +43,37 @@ function MemberRow({
      
       <div className={styles.actions}>
 
-        {isCurrentUser ? (
+        { (leaveRequest && onCancelLeave) ? (
+            
+            <Button label="Hủy yêu cầu rời đội" labelSize={16} variant="outline" color="orange" onClick={onCancelLeave}></Button>
+
+        ) : (leaveRequest && onApproveLeave) ? (
+            
+            <Button label="Duyệt yêu cầu rời đội" labelSize={16} variant="outline" color="orange" onClick={onApproveLeave} ></Button>
+
+        ) : isCurrentUser ? (
           
-          
-          <button className={styles.actionBtn} onClick={onLeave} title="Rời đội">
-            <SignOut size={28} weight='bold' color="var(--color-secondary-blue)" />
-          </button>
+          <Tooltip content="Rời đội">
+            <button className={styles.actionBtn} onClick={onLeave}>
+              <SignOut size={28} weight='bold' color="var(--color-secondary-blue)" />
+            </button>
+          </Tooltip>
+
         ) : (onKick || onPromote) ? (
-          
           <>
-            <button className={styles.actionBtn} onClick={onPromote} title="Phong làm trưởng nhóm">
+          
+          <Tooltip content="Trao quyền" bgColor="orange">
+            <button className={styles.actionBtn} onClick={onPromote}>
               <CrownSimple size={28} weight='bold' color="var(--color-border-orange)" />
             </button>
-            <button className={styles.actionBtn} onClick={onKick} title="Kick khỏi đội">
+          </Tooltip>
+
+          <Tooltip content="Yêu cầu rời đội" bgColor="orange">
+            <button className={styles.actionBtn} onClick={onKick}>
               <X size={28} weight='bold' color="var(--color-border-orange)" />
             </button>
+          </Tooltip>
+          
           </>
         ) : null}
 

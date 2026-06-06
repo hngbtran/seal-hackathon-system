@@ -13,6 +13,7 @@ function FormInput({
   type = 'text',
   value,
   onChange,
+  onBlur,
   placeholder,
   maxLength,
   status,              // 'default' | 'error' | 'success'
@@ -52,6 +53,7 @@ function FormInput({
             name={name}
             value={value}
             onChange={onChange}
+            onBlur={onBlur}
             placeholder={placeholder}
             maxLength={maxLength}
             disabled={disabled}

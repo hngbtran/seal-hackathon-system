@@ -2,9 +2,9 @@ import NotificationDropdown from "./NotificationDropdown";
 import UserMenuDropdown from "./UserMenuDropdown";
 import styles from './Navbar.module.css';
 import Button from "../shared/Button";
-import { useState } from "react";
-import RegisterPage from "../../pages/RegisterPage";
-import LoginPage from "../../pages/LoginPage";
+// import { useState } from "react";
+// import RegisterPage from "../../pages/RegisterPage";
+// import LoginPage from "../../pages/LoginPage";
 function Navbar({ isLoggedIn, user }) {
 
     

@@ -79,7 +79,7 @@ function MemberView() {
   }
 };
 
-
+const handleOnCancelLeave = (id) => { }
 
   return (
     <EventLayout>
@@ -97,6 +97,7 @@ function MemberView() {
           teamStatus={teamStatus}
           isLeader={false}
           onLeave={handleOnLeave}
+          onCancelLeave={(id) => handleOnCancelLeave(id)}
         // Không truyền onKick, onPromote, onLockTeam → member không thấy các nút đó
         />
 

@@ -302,40 +302,46 @@ const handleCancel = ((memberId) => {
   }
 };
 
+const handleOnEdit = (id) => { } // TODO: Xử lí chỉnh sửa thông tin đội
 
-
+const handleOnApproveLeave = (id) => { } // TODO: Xử lí rời đội
 
 
   return (
     <EventLayout>
-      <div classname={styles.page}>
+      <div className={styles.page}>
 
         {/* Thanh info đội — full width */}
 
         {/* cần truyền vào teamName ,description, teamCode */}
         <TeamInfoHeader
+          teamId={teamInfo.id}
           teamName={teamInfo.teamName}
           description={teamInfo.description}
           teamCode={teamInfo.teamCode}
+          isLeader
+          onEdit={() => console.log('mở popup chỉnh sửa thông tin đội')}
           onFindMember={() => console.log('mở popup tìm thành viên')}
         />
 
         {/* 2 cột bên dưới */}
-        <div classname={styles.content}>
+        <div className={styles.content}>
 
-          <div classname={styles.main}>
+          <div className={styles.main}>
             <TeamMemberPanel
               members={FAKE_MEMBERS}
               maxSlots={4}
               teamStatus={teamStatus}
+              isLeader
               onLockTeam={() => setTeamStatus('waiting')}
               onKick={(id) => handleOnKick(id)}
               onPromote={(id) => handleOnPromote(id)}
+              onApproveLeave={(id) => handleOnApproveLeave(id)} 
               onLeave={handleOnLeave}
             />
           </div>
 
-          <div classname={styles.side}>
+          <div className={styles.side}>
             <RequestCard
               requests={FAKE_REQUESTS}
               onAccept={(id) => handleOnAccept(id, true)}

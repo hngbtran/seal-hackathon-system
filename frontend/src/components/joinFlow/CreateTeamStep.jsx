@@ -48,10 +48,10 @@ function CreateTeamStep({ onClose, onBack, onSubmit, currentUserEmail = localSto
         }).then((response) => {
             if (response.data == false) {
                 setNameStatus('error')
-                setNameMessage('tên đội đã tồn tại')
+                setNameMessage('Tên đội đã tồn tại')
             } else {
                 setNameStatus('success')
-                setNameMessage('tên đội hợp lệ')
+                setNameMessage('Tên đội hợp lệ')
             }
         }).catch((error) => {
             console.log(error)
