@@ -162,7 +162,8 @@ function NoTeamView() {
                  window.location.reload();
         })
         .catch((error) => {
-          setEmailMessage('Email ko hợp lệ hoặc đã tồn tại')
+          // lay data tu error 
+          setEmailMessage(error.response.data)
           setEmailStatus('error')
           console.log(error)
         })

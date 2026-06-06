@@ -59,6 +59,7 @@ public class TeamService {
         for (String email : userEmails) {
             User member = userRepository.findByEmail(email).orElse(null);
             if (member == null ) {
+
                 throw new IllegalArgumentException("email bạn mời không tồn tại");
             }
             if (member.getEmail().equals(leader.getEmail())) {
