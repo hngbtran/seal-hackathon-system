@@ -52,7 +52,7 @@ function MemberRow({
         ) : isCurrentUser ? (
           
           <Tooltip content="Rời đội">
-            <button className={styles.actionBtn} onClick={onLeave} title="Rời đội">
+            <button className={styles.actionBtn} onClick={onLeave}>
               <SignOut size={28} weight='bold' color="var(--color-secondary-blue)" />
             </button>
           </Tooltip>
