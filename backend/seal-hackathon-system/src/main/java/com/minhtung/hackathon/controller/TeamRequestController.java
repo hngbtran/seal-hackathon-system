@@ -235,14 +235,13 @@ public class TeamRequestController {
     //chuc nang cua leader
 
     @Operation(summary = "leader duyet hoac tu choi leave_request")
-    @PutMapping("/Leave-request/{requestId}/respond")
+    @PutMapping("/Leave-request/{userId}/respond")
     public ResponseEntity<String> respondLeaveRequest(
-            @PathVariable long requestId,
-            @RequestParam boolean accept,
+            @PathVariable long userId,
             @RequestHeader("Authorization") String auth) {
         Integer uid = getUid(auth);
         if (uid == null) return unauthorized();
-        return ResponseEntity.ok(teamService.respondToLeaveRequest(requestId, accept, uid));
+        return ResponseEntity.ok(teamService.respondToLeaveRequest(userId,uid));
     }
 
 

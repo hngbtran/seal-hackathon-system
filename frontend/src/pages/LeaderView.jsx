@@ -25,8 +25,10 @@ import axios from 'axios'
 // const FAKE_REQUESTS = [
 //    { id: 1, name: 'Hồ Ngọc Bảo Trân', email: 'hngbtran@gmail.com', message: 'Xin chào, mình rất ấn tượng với định hướng của Team bạn. Rất mong được tham gia vào Team của bạn.' },
 // ]
-
-
+  
+// const FAKE_LEAVE_REQUESTS = [
+//    { id: 1, name: 'Hồ Ngọc Bảo Trân', message: 'Backend generate ra thành viên "Name" xin rồi đội.' },
+// ]
 
 
 
@@ -304,7 +306,25 @@ const handleCancel = ((memberId) => {
 
 const handleOnEdit = (id) => { } // TODO: Xử lí chỉnh sửa thông tin đội
 
-const handleOnApproveLeave = (id) => { } // TODO: Xử lí rời đội
+const handleOnApproveLeave = (id) => { 
+    axios
+      .put(`http://localhost:8080/api/teamrequest/Leave-request/${id}/respond`, {}, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` // nếu có JWT
+        }
+      })
+      .then((response) => {
+        console.log(response.data);
+        alert("Bạn đã duyet yeu cau roi nhóm thành công!");
+          window.location.reload();
+      })
+      .catch((error) => {
+        console.log(error);
+        alert("Có lỗi xảy ra, không thể rời nhóm lúc này.");
+      });
+
+} // TODO: Xử lí rời đội
 
 
   return (
