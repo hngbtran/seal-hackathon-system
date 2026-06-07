@@ -46,7 +46,7 @@ function MemberRow({
         { (leaveRequest && onCancelLeave) ? (
             
             <Button label="Hủy yêu cầu rời đội" labelSize={16} variant="outline" color="orange" onClick={onCancelLeave}></Button>
-
+          
         ) : (leaveRequest && onApproveLeave) ? (
             
             <Button label="Duyệt yêu cầu rời đội" labelSize={16} variant="outline" color="orange" onClick={onApproveLeave} ></Button>

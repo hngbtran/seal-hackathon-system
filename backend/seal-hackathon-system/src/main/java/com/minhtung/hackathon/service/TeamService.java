@@ -498,38 +498,26 @@ public class TeamService {
     //8 day la ham dung de leadder duyet vuec leave_request trong team
 
     @Transactional
-    public String respondToLeaveRequest(Long requestId, boolean acp, int leaderId) {
-        TeamRequest req = teamRequestRepository.findById(requestId).orElse(null);
-        Member leader = memberRepository.findByMemberIdAndStatus(leaderId, true).orElse(null);
-        if (req == null) {
-            return "không tìm thấy yêu câu rời đội";
+    public String respondToLeaveRequest(long userId, long leaderId) {
+        Team team = teamRepository.findByLeaderId(leaderId).orElse(null);
+        User user = userRepository.findById(userId).orElse(null);
+        if (team == null) {
+            throw new IllegalArgumentException("Team not found");
         }
-        if (req.getType() != RequestType.LEAVE_REQUEST) {
-            return "đây không phải yêu cầu rời đội";
+        TeamRequest teamRequest = teamRequestRepository.findBySenderIdAndTeamIdAndTypeAndStatus(userId, team.getId(), RequestType.LEAVE_REQUEST, RequestStatus.PENDING).orElse(null);
+        if (teamRequest == null) {
+            throw new IllegalArgumentException("Leave Request not found");
         }
-        if (!req.getReceiver().getId().equals(leaderId)) {
-            return "ban khong phai leader cua doi nay";
-        }
-        if (req.getStatus() != RequestStatus.PENDING) {
-            return "yeu cau nay da duoc xu ly roi";
-        }
-
-        if (leader.getRole() != MemberRole.LEADER || leader == null) {
-            return "ban ko co quyen thuc hien chuc nang nay";
-        }
-
-        if (acp) {
-            Member member = memberRepository.findByTeamIdAndMemberId(req.getTeam().getId(), req.getSender().getId()).orElse(null);
-            if (member != null) {
-                member.setStatus(false);//danh dau da duoc roi doi
+        List<Member> members = memberRepository.findByTeamIdAndStatus(team.getId(), true);
+        for (Member member : members) {
+            if (member.getMember().equals(user)) {
+                member.setStatus(false);
                 memberRepository.save(member);
+                return "duyet yeu cau roi doi thanh cong";
             }
-            req.setStatus(RequestStatus.APPROVED);
-        } else {
-            req.setStatus(RequestStatus.REJECTED);
         }
-        teamRequestRepository.save(req);
-        return acp ? "Đã cho phép thành viên rời đội" : "Đã từ chối yêu cầu rời đội";
+
+        return "Duyet yeu cau roi doi ko thanh cong";
     }
 
 
