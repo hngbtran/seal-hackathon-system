@@ -62,10 +62,10 @@ function MemberRow({
 
               ) : (
                 
-                <Tooltip content="Xin rời đội">
+                <Tooltip content="Rời đội">
                   <button
                     className={styles.actionBtn}
-                    onClick={() => setSelectedRequest({ compose: true })}
+                    onClick={isLeader ? onLeave : () => setSelectedRequest({ compose: true })}
                     // thêm một trường compose vào request gốc để phân biệt việc gửi leave request của member
                     >
                     <SignOut size={28} weight='bold' color="var(--color-secondary-blue)" />

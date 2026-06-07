@@ -31,14 +31,24 @@ function LeaveRequestDetailModal({
                         label={request.compose ? "Hủy" : "Từ chối"}
                         variant="outline"
                         color='grey'
-                        onClick={() => { onCancel(request.id); onClose() }}
+                        onClick={() => { 
+                            !request.compose 
+                            ? onCancel(request.id) 
+                            : () => {};
+                            onClose()
+                             }
+                        }
                     />
                     <Button
                         label={request.compose ? "Xác nhân" : "Đồng ý"}
                         variant="primary"
                         color='blue'
-                        onClick={() => { onLeave(message); onClose() }}
-                        disabled={!isFormValid}
+                        onClick={
+                            request.compose 
+                            ? () => { onLeave(message); onClose() }
+                            : onAccept
+                        }
+                            disabled={!isFormValid && request.compose}
                     />
                 </div>
             }
@@ -57,6 +67,7 @@ function LeaveRequestDetailModal({
                     <p className={styles.label}>Lí do xin rời đội</p>
 
                     <FormTextarea
+                        className={request.compose ? null : styles.message}
                         required
                         iconLeft={ListPlus}
                         placeholder='Mình không thể sắp xếp thời gian tham gia cuộc thi ...'
