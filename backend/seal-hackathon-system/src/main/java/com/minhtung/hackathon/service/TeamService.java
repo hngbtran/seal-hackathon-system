@@ -747,7 +747,7 @@ public class TeamService {
         teamRequestRepository.save(teamRequest);
         OutTeamResponse outTeamResponse = new OutTeamResponse();
         outTeamResponse.setId(teamRequest.getId());
-        outTeamResponse.setMemberId(member.getMember().getId());
+        outTeamResponse.setMemberId(member.getId());
         outTeamResponse.setName(sender.getFullName());
         outTeamResponse.setMessage("Thành viên " + sender.getFullName() + " xin rời đội.");
 
@@ -812,7 +812,7 @@ public class TeamService {
             ) {
                 OutTeamResponse outTeamResponse = new OutTeamResponse();
                 outTeamResponse.setId(teamRequest.getId());
-                outTeamResponse.setMemberId(teamRequest.getSender().getId());
+                outTeamResponse.setMemberId(teamRequest.getId());
                 outTeamResponse.setName(teamRequest.getSender().getFullName());
                 outTeamResponse.setMessage(teamRequest.getMessage());
                 outTeamResponses.add(outTeamResponse);
