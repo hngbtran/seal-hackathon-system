@@ -12,8 +12,13 @@ import UserDashboard from './pages/UserDashboard';
 function App() {
   const [role, setRole] = useState(null);
   const token = localStorage.getItem("accessToken");
-  const [screen, setScreen] = useState('dashboard')
-  
+  const [screen, setScreen] = useState(localStorage.getItem('screen') || 'dashboard')
+
+  function navigate(page) {
+    localStorage.setItem('screen', page)
+    setScreen(page)
+  }
+
 
   useEffect(() => {
     axios
@@ -28,27 +33,27 @@ function App() {
       .catch((err) => {
         if (err.response?.status === 404) {
           setRole("UNAUTHORIZED");
-        } 
+        }
       });
   }, [token]);
   if (!token) {
     return <LoginPage />;
   }
   if (screen === 'team') {
-        if (role === "LEADER") {
-          return <LeaderView/>
-        }
-        if (role === 'MEMBER') {
-          return <MemberView/>
-        }
-        else {
-          return <NoTeamViews/>
-        }
+    if (role === "LEADER") {
+      return <LeaderView />
     }
+    if (role === 'MEMBER') {
+      return <MemberView />
+    }
+    else {
+      return <NoTeamViews />
+    }
+  }
 
-  return <UserDashboard onNavigate={(page) => setScreen(page)} />
+  return <UserDashboard onNavigate={navigate} />
 
- 
+
 
 }
 
