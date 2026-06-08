@@ -2,6 +2,7 @@ package com.minhtung.hackathon.controller;
 
 
 import com.minhtung.hackathon.dto.request.CreateTeamDto;
+import com.minhtung.hackathon.dto.request.EdiTeamRequest;
 import com.minhtung.hackathon.dto.response.CreateTeamResponse;
 import com.minhtung.hackathon.dto.joinByCode;
 import com.minhtung.hackathon.repository.UserRepository;
@@ -254,6 +255,16 @@ public class TeamController {
         return ResponseEntity.ok().body(teamService.checkCode(code));
     }
 
+    //edit team
+    //lay FAKE RESULTS BY CODE check code
+    @PutMapping("/edit-team")
+    public ResponseEntity<?> editTeam(@RequestHeader("Authorization") String auth, @RequestBody EdiTeamRequest editTeamRequest) {
+        Integer uid = getUid(auth);
+        if (uid == null) {
+            return unauthorized();
+        }
+        return ResponseEntity.ok().body(teamService.editTeam(editTeamRequest,uid));
+    }
 
 }
 

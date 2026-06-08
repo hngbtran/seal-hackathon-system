@@ -126,7 +126,7 @@ function LeaderView() {
       .catch((error) => console.log(error));
   }, []);
 
-   // api teamLeader xem những leave request da gui di 
+  // api teamLeader xem những leave request da gui di 
   useEffect(() => {
     axios
       .get('http://localhost:8080/api/teamrequest/leave_request'
@@ -346,7 +346,9 @@ function LeaderView() {
     }
   };
 
-  const handleOnEdit = (id) => { } // TODO: Xử lí chỉnh sửa thông tin đội
+ 
+
+  // TODO: Xử lí chỉnh sửa thông tin đội
 
   const handleOnApproveLeave = (id) => {
     axios
@@ -368,7 +370,7 @@ function LeaderView() {
 
   } // TODO: Xử lí rời đội
 
-    const handleOnCancelLeave = (id) => {
+  const handleOnCancelLeave = (id) => {
     axios
       .post('http://localhost:8080/api/teamrequest/out-team/cancle', id, {
         headers: {
@@ -401,7 +403,7 @@ function LeaderView() {
           description={teamInfo.description}
           teamCode={teamInfo.teamCode}
           isLeader
-          onEdit={() => console.log('mở popup chỉnh sửa thông tin đội')}
+          // onEdit={() => console.log('mở popup chỉnh sửa thông tin đội')}
           onFindMember={() => console.log('mở popup tìm thành viên')}
         />
 

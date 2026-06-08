@@ -2,6 +2,7 @@ package com.minhtung.hackathon.service;
 
 
 import com.minhtung.hackathon.dto.request.CreateTeamDto;
+import com.minhtung.hackathon.dto.request.EdiTeamRequest;
 import com.minhtung.hackathon.dto.request.InvitationRequest;
 import com.minhtung.hackathon.dto.response.CreateTeamResponse;
 import com.minhtung.hackathon.dto.request.JoinTeamRequest;
@@ -973,5 +974,29 @@ public class TeamService {
         searchTeamByCodeResponse.setTeam(teamByCodeResponse);
 
         return searchTeamByCodeResponse;
+    }
+
+    // edit team:
+    public String editTeam(EdiTeamRequest editTeamRequest, long leaderId) {
+        Team team = teamRepository.findByLeaderId(leaderId).orElse(null);
+        if (team == null) {
+            throw new IllegalArgumentException("team khong ton tai");
+        }
+        if (editTeamRequest.getName().equals(team.getName())) {
+            team.setName(editTeamRequest.getName());
+            team.setDescription(editTeamRequest.getDescription());
+            teamRepository.save(team);
+            return "edit team success";
+        }
+
+        Team teamTrungTen = teamRepository.findByNameIgnoreCaseAndStatus(editTeamRequest.getName(), TeamStatus.OPEN).orElse(null);
+        // ko tim thay team trung ten
+        if (teamTrungTen == null) {
+            team.setName(editTeamRequest.getName());
+            team.setDescription(editTeamRequest.getDescription());
+            teamRepository.save(team);
+            return "edit team success";
+        }
+        return "edit team fail";
     }
 }
