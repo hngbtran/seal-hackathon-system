@@ -431,6 +431,29 @@ function LeaderView() {
       });
   }
 
+  const handleOnLockTeam = () => {
+    axios
+      .post('http://localhost:8080/api/teamrequest/lock-team', {}, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` // nếu có JWT
+        }
+      })
+      .then((response) => {
+        console.log(response.data);
+
+        setTeamStatus('waiting')
+
+        // alert("Bạn đã tu choi yeu cau roi nhóm thành công!");
+        window.location.reload();
+      })
+      .catch((error) => {
+        console.log(error);
+        alert("Có lỗi xảy ra, không thể rời nhóm lúc này.");
+      });
+  }
+
+
   // function renderNoticeBox() {
   //   if (teamStatus == 'pending' && emptyCount <= 1) { // ! mốt chỉnh lại chỗ này là emptyCount == minSlots
   //     return (
@@ -482,7 +505,7 @@ function LeaderView() {
               maxSlots={MAX_SLOTS}
               teamStatus={teamStatus}
               isLeader
-              onLockTeam={() => setTeamStatus('waiting')}
+              onLockTeam={() => handleOnLockTeam()}
               onKick={(id) => handleOnKick(id)}
               onPromote={(id) => handleOnPromote(id)}
               onApproveLeave={(id) => handleOnApproveLeave(id)}
