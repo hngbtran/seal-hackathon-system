@@ -89,6 +89,7 @@ function LeaderView() {
       )
       .then((response) => {
         setTeamInfo(response.data);
+        setTeamStatus(response.data.teamStatus)
       })
       .catch((error) => console.log(error));
   }, []);
