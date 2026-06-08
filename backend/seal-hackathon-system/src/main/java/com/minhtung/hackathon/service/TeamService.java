@@ -269,6 +269,9 @@ public class TeamService {
 
             List<Member> members = teamRequest.getTeam().getMembers();
             for (Member member : members) {
+                if (!member.isStatus()) {
+                    continue;
+                }
                 TeamMemberResponse teamMemberResponse = new TeamMemberResponse();
                 teamMemberResponse.setId(member.getId());
                 teamMemberResponse.setName(member.getMember().getFullName());
