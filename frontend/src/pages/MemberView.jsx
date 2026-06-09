@@ -24,10 +24,10 @@ const FAKE_LEAVE_REQUESTS = [
 
 
 function MemberView() {
-  const [teamStatus] = useState('OPEN')
+  const [teamStatus, setTeamStatus] = useState('OPEN')
   const [FAKE_MEMBERS, setFAKE_MEMBERS] = useState([]);
   const token = localStorage.getItem("accessToken")
-  const [teamInfo, setTeamInfo] = useState({ teamName: '', description: '', teamCode: '' });
+  const [teamInfo, setTeamInfo] = useState({ teamName: '', description: '', teamCode: '', teamStatus: '' });
   const [leaveRequest, setLeaveRequest] = useState([])
   // api lấy team info
   useEffect(() => {
@@ -42,6 +42,7 @@ function MemberView() {
       )
       .then((response) => {
         setTeamInfo(response.data);
+        setTeamStatus(response.data.teamStatus);
       })
       .catch((error) => console.log(error));
   }, []);
@@ -132,6 +133,7 @@ function MemberView() {
 
         <TeamInfoHeader
           teamName={teamInfo.teamName}
+          teamStatus={teamStatus}
           description={teamInfo.description}
           showFindMember={false}
         />
