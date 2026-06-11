@@ -829,7 +829,7 @@ public class TeamService {
     ) {
 
 
-        List<Team> needMemberTeams = teamRepository.findTeamsWithLessThanFourMembers();
+        List<Team> needMemberTeams = teamRepository.findByStatus(TeamStatus.OPEN);
         List<NeedMemberTeamResponse> needMemberTeamResponseList = new ArrayList<>();
         if (needMemberTeams.isEmpty()) {
             return Collections.emptyList();
