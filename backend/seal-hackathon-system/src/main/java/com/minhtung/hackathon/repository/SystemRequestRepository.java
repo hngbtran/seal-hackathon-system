@@ -52,4 +52,15 @@ public interface SystemRequestRepository extends JpaRepository<SystemRequest, Lo
             SystemRequest.RequestType type,
             SystemRequest.RequestStatus status
     );
+
+
+    // Tìm request vi phạm có status là ACCEPTED gần nhất của Team
+    @Query("SELECT r FROM SystemRequest r, Submission s " +
+            "WHERE r.referenceId = s.id " +
+            "AND s.team.id = :teamId " +
+            "AND r.referenceType = com.minhtung.hackathon.entity.SystemRequest.ReferenceType.SUBMISSION " +
+            "AND r.type = com.minhtung.hackathon.entity.SystemRequest.RequestType.FLAG_VIOLATION " +
+            "AND r.status = com.minhtung.hackathon.entity.SystemRequest.RequestStatus.ACCEPTED " +
+            "ORDER BY r.createdAt DESC")
+    List<SystemRequest> findLatestBanRequestByTeamId(@Param("teamId") long teamId);
 }

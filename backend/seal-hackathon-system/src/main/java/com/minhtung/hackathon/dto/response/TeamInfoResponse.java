@@ -16,6 +16,7 @@ public class TeamInfoResponse {
     private TrackResponse category;
     private int maxSlots;
     private String teamRole;
+    private String banReason;
     @AllArgsConstructor
     @NoArgsConstructor
     @Getter

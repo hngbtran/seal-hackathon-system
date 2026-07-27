@@ -34,6 +34,7 @@ public class TeamService {
     private final SubmissionRepository submissionRepository;
     private final StudentprofileRepository studentprofileRepository;
     private final TrackRepository trackRepository;
+    private final SystemRequestRepository  systemRequestRepository;
     //tao 1 team moi
 
 
@@ -924,6 +925,17 @@ public class TeamService {
         //trả về maxSlots
         Event event = team.getTrack().getEvent();
         teamInfoResponse.setMaxSlots(event.getMaxTeamMember());
+
+        // Lấy banReason từ SystemRequest (FLAG_VIOLATION và ACCEPTED)
+
+        systemRequestRepository.findLatestBanRequestByTeamId(team.getId())
+                .stream()
+                .findFirst()
+                .ifPresent(sr -> {
+                    String reason = sr.getHandleMessage() != null ? sr.getHandleMessage() : sr.getMessage();
+                    teamInfoResponse.setBanReason(reason);
+                });
+
 
         return teamInfoResponse;
     }
