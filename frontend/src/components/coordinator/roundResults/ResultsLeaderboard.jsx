@@ -13,7 +13,7 @@ const STATUS_FILTERS = [
   { key: 'all', label: 'Tất cả' },
   { key: 'official', label: 'Đã chốt điểm', dot: 'green' },
   { key: 'provisional', label: 'Tạm tính', dot: 'blue' },
-  // { key: 'discrepancy', label: 'Cần rà soát', dot: 'orange' },
+  { key: 'discrepancy', label: 'Cần rà soát', dot: 'orange' },
   { key: 'violation', label: 'Vi phạm', dot: 'orange' },
 ]
 
@@ -28,14 +28,13 @@ function StatusCell({ row, onResolveViolation }) {
       </Tooltip>
     )
   }
-  // Tạm ẩn độ lệch chuẩn
-  // if (row.status === 'discrepancy') {
-  //   return (
-  //     <Tooltip content={'Chênh lệch điểm (lệch chuẩn ' + (row.discrepancy ? row.discrepancy.stdDev : '') + ')'} bgColor="white" textColor='orangeTxt'>
-  //       <span className={styles.iconWarn}><Scales size={22} weight="fill" /></span>
-  //     </Tooltip>
-  //   )
-  // }
+  if (row.status === 'discrepancy') {
+    return (
+      <Tooltip content={'Chênh lệch điểm (lệch chuẩn ' + (row.discrepancy ? row.discrepancy.stdDev : '') + ')'} bgColor="white" textColor='orangeTxt'>
+        <span className={styles.iconWarn}><Scales size={22} weight="fill" /></span>
+      </Tooltip>
+    )
+  }
   if (row.status === 'provisional') {
     return <Badge variant="blueSolid" label="Tạm tính" size="sm" dot={false} />
   }
@@ -183,7 +182,7 @@ function ResultsLeaderboard({ rows, totalCount, search, onSearch, filter, onFilt
                     <span className={styles.scoreNone}>—</span>
                   ) : (
                     <div className={styles.scoreWrap}>
-                      <span className={row.status === 'violation' ? styles.scoreTemp : styles.scoreVal}>
+                      <span className={row.status === 'violation' || row.status === 'discrepancy' ? styles.scoreTemp : styles.scoreVal}>
                         {fmtScore(row.score)}
                         <span className={styles.scoreMax}>/10</span>
                       </span>

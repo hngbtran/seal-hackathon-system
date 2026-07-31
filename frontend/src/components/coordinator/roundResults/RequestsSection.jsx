@@ -7,7 +7,7 @@ import ScoreEditModal from './ScoreEditModal'
 import { mockScoreEditData } from './scoreEditMock'
 import axiosClient from '../../../api/axiosClient'
 import { format } from 'date-fns'
-function RequestsSection({ onOpenTeam, onOpenSubmission, type = 'all', hideHeader = false }) {
+function RequestsSection({ onOpenTeam, onOpenSubmission, type = 'all', hideHeader = false, onRefresh, refreshTrigger }) {
   const [violationModalOpen, setViolationModalOpen] = useState(false)
   const [selectedViolation, setSelectedViolation] = useState(null)
   const [scoreEditModalOpen, setScoreEditModalOpen] = useState(false)
@@ -27,30 +27,28 @@ function RequestsSection({ onOpenTeam, onOpenSubmission, type = 'all', hideHeade
   // ]
 
 
-  useEffect(() => {
+  const fetchViolations = () => {
     setLoading(true)
     axiosClient.get('/system-requests/violations')
       .then((res) => {
-        // Map dữ liệu từ API khớp với cấu trúc bạn đang dùng
         const mappedData = (res.data || []).map(item => ({
           id: item.id,
           submissionId: item.submissionId,
           teamName: item.teamName || 'N/A',
           round: item.round || 'N/A',
           judgeName: item.judgeName || 'N/A',
-         time: item.time || '', // 👈 Gán thẳng, không new Date() nữa,
+          time: item.time || '',
           reason: item.reason
         }))
-        
         setViolations(mappedData)
       })
-      .catch((err) => {
-        console.error("Lỗi khi tải danh sách báo cáo vi phạm:", err)
-      })
-      .finally(() => {
-        setLoading(false)
-      })
-  }, [])
+      .catch((err) => console.error("Lỗi khi tải danh sách báo cáo vi phạm:", err))
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    fetchViolations()
+  }, [refreshTrigger])
 
 
   
@@ -155,6 +153,10 @@ function RequestsSection({ onOpenTeam, onOpenSubmission, type = 'all', hideHeade
           data={selectedViolation}
           onOpenTeam={onOpenTeam}
           onOpenSubmission={onOpenSubmission}
+          onHandled={() => {
+            fetchViolations()
+            if (onRefresh) onRefresh()
+          }}
         />
       )}
 

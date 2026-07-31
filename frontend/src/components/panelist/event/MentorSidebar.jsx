@@ -8,8 +8,7 @@ import styles from './MentorSidebar.module.css'
 
 // ==========================================
 // MOCK DATA
-// ==========================================
-const ENABLE_MOCK_MENTOR_TIMELINE = true;
+const ENABLE_MOCK_MENTOR_TIMELINE = false;
 
 /**
  * MentorSidebar — cột phải sticky của tab Mentor.
@@ -52,13 +51,14 @@ function MentorSidebar({ event }) {
   const navigate = useNavigate();
 
   const milestones = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date();
 
     return (mentor.milestones ?? []).map((m, index) => {
       const _date = m.date ? new Date(m.date) : null;
-      // Force isDone cho vòng đầu tiên (hoặc nếu date < today) để test
-      const isDone = (_date && _date < today) || m.status?.toLowerCase() === 'completed' || (ENABLE_MOCK_MENTOR_TIMELINE && index === 0);
+      const _endDate = m.endDate ? new Date(m.endDate) : null;
+      
+      const compareDate = _endDate || _date;
+      const isDone = (compareDate && compareDate < now) || m.status?.toLowerCase() === 'completed' || (ENABLE_MOCK_MENTOR_TIMELINE && index === 0);
 
       return {
         id: m.id,

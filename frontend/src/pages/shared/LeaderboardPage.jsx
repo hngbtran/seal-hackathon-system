@@ -10,7 +10,7 @@ import axiosClient from '../../api/axiosClient';
 // ==========================================
 // MOCK DATA
 // ==========================================
-const ENABLE_MOCK_LEADERBOARD = true;
+const ENABLE_MOCK_LEADERBOARD = false;
 
 const MOCK_LEADERBOARD = [
   {
@@ -18,20 +18,20 @@ const MOCK_LEADERBOARD = [
     teamName: 'SEAL INNOVATORS',
     rank: 1,
     avgScore: 8.95,
-    status: 'official', 
-    discrepancy: false, 
+    status: 'official',
+    discrepancy: false,
     judges: [
-      { 
+      {
         judgeId: 'j1', judgeName: 'Trần Văn A', score: 9.0,
-        criteriaScores: [ { name: 'Tính khả thi', score: 9.0 }, { name: 'Sáng tạo', score: 9.0 } ]
+        criteriaScores: [{ name: 'Tính khả thi', score: 9.0 }, { name: 'Sáng tạo', score: 9.0 }]
       },
-      { 
+      {
         judgeId: 'j2', judgeName: 'Nguyễn Thị B', score: 8.9,
-        criteriaScores: [ { name: 'Tính khả thi', score: 8.8 }, { name: 'Sáng tạo', score: 9.0 } ]
+        criteriaScores: [{ name: 'Tính khả thi', score: 8.8 }, { name: 'Sáng tạo', score: 9.0 }]
       },
-      { 
+      {
         judgeId: 'j3', judgeName: 'Lê Văn C', score: 9.0,
-        criteriaScores: [ { name: 'Tính khả thi', score: 9.0 }, { name: 'Sáng tạo', score: 9.0 } ]
+        criteriaScores: [{ name: 'Tính khả thi', score: 9.0 }, { name: 'Sáng tạo', score: 9.0 }]
       }
     ]
   },
@@ -45,17 +45,17 @@ const MOCK_LEADERBOARD = [
     status: 'provisional',
     discrepancy: true, // Lệch chuẩn
     judges: [
-      { 
+      {
         judgeId: 'j1', judgeName: 'Trần Văn A (Bạn)', score: 8.5,
-        criteriaScores: [ { name: 'Tính khả thi', score: 8.0 }, { name: 'Sáng tạo', score: 9.0 } ]
+        criteriaScores: [{ name: 'Tính khả thi', score: 8.0 }, { name: 'Sáng tạo', score: 9.0 }]
       },
-      { 
+      {
         judgeId: 'j2', judgeName: 'Nguyễn Thị B', score: 6.0,
-        criteriaScores: [ { name: 'Tính khả thi', score: 5.0 }, { name: 'Sáng tạo', score: 7.0 } ]
+        criteriaScores: [{ name: 'Tính khả thi', score: 5.0 }, { name: 'Sáng tạo', score: 7.0 }]
       },
-      { 
+      {
         judgeId: 'j3', judgeName: 'Lê Văn C', score: 9.8,
-        criteriaScores: [ { name: 'Tính khả thi', score: 10.0 }, { name: 'Sáng tạo', score: 9.6 } ]
+        criteriaScores: [{ name: 'Tính khả thi', score: 10.0 }, { name: 'Sáng tạo', score: 9.6 }]
       }
     ]
   },
@@ -69,17 +69,17 @@ const MOCK_LEADERBOARD = [
     status: 'official',
     discrepancy: false,
     judges: [
-      { 
+      {
         judgeId: 'j4', judgeName: 'Phạm Văn D', score: 7.5,
-        criteriaScores: [ { name: 'Tính khả thi', score: 7.0 }, { name: 'Sáng tạo', score: 8.0 } ]
+        criteriaScores: [{ name: 'Tính khả thi', score: 7.0 }, { name: 'Sáng tạo', score: 8.0 }]
       },
-      { 
+      {
         judgeId: 'j5', judgeName: 'Hoàng Thị E', score: 7.4,
-        criteriaScores: [ { name: 'Tính khả thi', score: 7.4 }, { name: 'Sáng tạo', score: 7.4 } ]
+        criteriaScores: [{ name: 'Tính khả thi', score: 7.4 }, { name: 'Sáng tạo', score: 7.4 }]
       },
-      { 
+      {
         judgeId: 'j6', judgeName: 'Vũ Văn F', score: 7.6,
-        criteriaScores: [ { name: 'Tính khả thi', score: 7.6 }, { name: 'Sáng tạo', score: 7.6 } ]
+        criteriaScores: [{ name: 'Tính khả thi', score: 7.6 }, { name: 'Sáng tạo', score: 7.6 }]
       }
     ]
   }
@@ -141,12 +141,12 @@ const MOCK_SCORE_DISTRIBUTION = {
 };
 
 function LeaderboardPage() {
-  const { role: authRole, teamRole } = useAuth(); // 'USER', 'LECTURER', 'ADMIN'
+  const { role: authRole, teamRole, userInfo } = useAuth(); // 'USER', 'LECTURER', 'ADMIN'
   const { eventId, roundId } = useParams();
-  const [MOCK_LEADERBOARD, setMOCK_LEADERBOARD] = useState([]);
+
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [myTeamData, setMyTeamData] = useState(null);
-const [myMentorTeamsData, setMyMentorTeamsData] = useState([]);
+  const [myMentorTeamsData, setMyMentorTeamsData] = useState([]);
   const [roundInfo, setRoundInfo] = useState({
     roundName: 'Đang tải...',
     publishStage: 1
@@ -163,12 +163,10 @@ const [myMentorTeamsData, setMyMentorTeamsData] = useState([]);
   const [chartData, setChartData] = useState(null);
 
   const handleOpenChart = (teamId) => {
+    // TODO: Khi nào có API thì thay bằng API thật
     // API Call: GET /api/rounds/${roundId}/submissions/${teamId}/score-distribution
-    // Mock logic:
-    if (ENABLE_MOCK_LEADERBOARD) {
-      setChartData(MOCK_SCORE_DISTRIBUTION);
-      setChartModalOpen(true);
-    }
+    setChartData(MOCK_SCORE_DISTRIBUTION);
+    setChartModalOpen(true);
   };
 
   // Xác định role thật khi vào trang này dựa trên URL (để không bị đè nếu vừa là Judge vừa là Mentor)
@@ -187,7 +185,7 @@ const [myMentorTeamsData, setMyMentorTeamsData] = useState([]);
   // Tương lai sẽ fetch bằng API: /round/rounds/:roundId
 
   useEffect(() => {
-    if (ENABLE_MOCK_LEADERBOARD) {
+    if (!ENABLE_MOCK_LEADERBOARD) {
       axiosClient.get(`/round/${roundId}/info`)
         .then((res) => {
           setRoundInfo({
@@ -200,14 +198,14 @@ const [myMentorTeamsData, setMyMentorTeamsData] = useState([]);
         });
     }
   }, [roundId]);
-  
+
   // const activeStage = ENABLE_MOCK_LEADERBOARD 
   // ? (activeRole === 'JUDGE' ? (roundId === 'vong3_mock' ? 3 : 2) : 3)
   // : roundInfo.publishStage;
 
-// const roundName = ENABLE_MOCK_LEADERBOARD 
-//   ? (roundId === 'vong3_mock' ? "Vòng 3: Đã chốt điểm" : "Vòng 2: Chung kết")
-//   : roundInfo.roundName;
+  // const roundName = ENABLE_MOCK_LEADERBOARD 
+  //   ? (roundId === 'vong3_mock' ? "Vòng 3: Đã chốt điểm" : "Vòng 2: Chung kết")
+  //   : roundInfo.roundName;
 
 
 
@@ -232,7 +230,7 @@ const [myMentorTeamsData, setMyMentorTeamsData] = useState([]);
 
 
   useEffect(() => {
-    if (ENABLE_MOCK_LEADERBOARD) {
+    if (!ENABLE_MOCK_LEADERBOARD) {
 
       axiosClient.get(`/team-results/rounds/${roundId}/results?eventId=${eventId}`)
         .then((response) => {
@@ -250,53 +248,53 @@ const [myMentorTeamsData, setMyMentorTeamsData] = useState([]);
   }, [roundId, eventId, ENABLE_MOCK_LEADERBOARD]);
 
 
-  // if (ENABLE_MOCK_LEADERBOARD) {
-  //   // Dùng dữ liệu Mock khi bật cờ MOCK
-  //   processedData = MOCK_LEADERBOARD.map(team => {
-  //     if (activeStage === 3) {
-  //       return {
-  //         ...team,
-  //         status: 'official',
-  //         discrepancy: false,
-  //       };
-  //     }
-  //     return team;
-  //   });
-  // } else {
-  //   // Dùng dữ liệu thật từ API
-  //   processedData = leaderboardData;
-  // }
+  if (ENABLE_MOCK_LEADERBOARD) {
+    // Dùng dữ liệu Mock khi bật cờ MOCK
+    processedData = MOCK_LEADERBOARD.map(team => {
+      if (roundInfo.publishStage === 3) {
+        return {
+          ...team,
+          status: 'official',
+          discrepancy: false,
+        };
+      }
+      return team;
+    });
+  } else {
+    // Dùng dữ liệu thật từ API
+    processedData = leaderboardData;
+  }
 
-  // MOCK IDS
   const currentJudgeId = ENABLE_MOCK_LEADERBOARD ? 'j1' : '';
+  const currentJudgeName = userInfo?.fullname || '';
 
   // const myTeamData = ENABLE_MOCK_LEADERBOARD ? MOCK_MY_CONTEXT.myTeam : null;
-  
+
   // const myMentorTeamsData = ENABLE_MOCK_LEADERBOARD ? MOCK_MY_CONTEXT.myMentorTeams : [];
 
   useEffect(() => {
-  if (ENABLE_MOCK_LEADERBOARD) {
-    if (!roundId) return;
+    if (!ENABLE_MOCK_LEADERBOARD) {
+      if (!roundId) return;
 
-    axiosClient
-      .get(`/round/${roundId}/my-context`)
-      .then((response) => {
-        // Response trả về MyContextResponseDTO chứa myTeam và myMentorTeams
-        const data = response.data;
-        setMyTeamData(data?.myTeam || null);
-        setMyMentorTeamsData(data?.myMentorTeams || []);
-      })
-      .catch((error) => {
-        console.error("Lỗi khi tải thông tin context của tôi:", error);
-        setMyTeamData(null);
-        setMyMentorTeamsData([]);
-      });
-  } else {
-    // Trường hợp bật MOCK
-    setMyTeamData(MOCK_MY_CONTEXT.myTeam);
-    setMyMentorTeamsData(MOCK_MY_CONTEXT.myMentorTeams || []);
-  }
-}, [roundId, ENABLE_MOCK_LEADERBOARD]);
+      axiosClient
+        .get(`/round/${roundId}/my-context`)
+        .then((response) => {
+          // Response trả về MyContextResponseDTO chứa myTeam và myMentorTeams
+          const data = response.data;
+          setMyTeamData(data?.myTeam || null);
+          setMyMentorTeamsData(data?.myMentorTeams || []);
+        })
+        .catch((error) => {
+          console.error("Lỗi khi tải thông tin context của tôi:", error);
+          setMyTeamData(null);
+          setMyMentorTeamsData([]);
+        });
+    } else {
+      // Trường hợp bật MOCK
+      setMyTeamData(MOCK_MY_CONTEXT.myTeam);
+      setMyMentorTeamsData(MOCK_MY_CONTEXT.myMentorTeams || []);
+    }
+  }, [roundId, ENABLE_MOCK_LEADERBOARD]);
 
   return (
     <div className={styles.page}>
@@ -332,10 +330,11 @@ const [myMentorTeamsData, setMyMentorTeamsData] = useState([]);
         )}
 
         <RoleBasedLeaderboard
-          data={leaderboardData}
+          data={processedData}
           role={activeRole}
           stage={roundInfo.publishStage}
           currentJudgeId={currentJudgeId}
+          currentJudgeName={currentJudgeName}
           myTeamData={myTeamData}
           myMentorTeamsData={myMentorTeamsData}
           onRequestEdit={handleRequestEdit}

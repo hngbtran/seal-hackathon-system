@@ -25,7 +25,17 @@ function JudgeRoundCard({ round, isLast, onOpenRubric,event }) {
 
   const navigate = useNavigate()
 
-  const cfg = LIFECYCLE_CFG[round.lifecycle] ?? LIFECYCLE_CFG.upcoming;
+  const now = new Date();
+  let computedLifecycle = round.lifecycle;
+  if (round.timeStart && new Date(round.timeStart) > now) {
+    computedLifecycle = 'upcoming';
+  } else if (round.timeEnd && new Date(round.timeEnd) < now) {
+    computedLifecycle = 'ended';
+  } else if (round.timeStart && new Date(round.timeStart) <= now) {
+    computedLifecycle = 'active';
+  }
+
+  const cfg = LIFECYCLE_CFG[computedLifecycle] ?? LIFECYCLE_CFG.upcoming;
   const { Icon } = cfg;
   const assigned = round.assigned !== false;
 
@@ -38,12 +48,12 @@ function JudgeRoundCard({ round, isLast, onOpenRubric,event }) {
   // Tone card: chỉ card đang diễn ra được tô xanh; các card còn lại style thường.
   let cardTone = styles.cardUpcoming;
   if (!assigned) cardTone = styles.cardUnassigned;
-  else if (round.lifecycle === 'active') cardTone = styles.cardActive;
-  else if (round.lifecycle === 'ended') cardTone = styles.cardEnded;
+  else if (computedLifecycle === 'active') cardTone = styles.cardActive;
+  else if (computedLifecycle === 'ended') cardTone = styles.cardEnded;
 
   // Nút hành động
   let action;
-  if (round.lifecycle === 'ended') {
+  if (computedLifecycle === 'ended') {
     // Vòng đã kết thúc: luôn cho xem kết quả.
     if (assigned) {
       // Nếu được phân công chấm thì hiện cả 2 nút.
@@ -59,8 +69,12 @@ function JudgeRoundCard({ round, isLast, onOpenRubric,event }) {
   } else if (!assigned) {
     // Chỉ còn active/upcoming mà không phụ trách mới báo "Không phụ trách".
     action = <Button className={styles.btn} label="Không phụ trách" variant="outline" color="blue" disabled />;
-  } else if (round.lifecycle === 'active') {
-    action = <Button className={styles.btn} label="Chấm điểm" icon={Pen} iconWeight="fill" variant="primary" color="blue" onClick={()=>{navigate(`/panelist/events/${event.id}/judge/rounds/${round.id}`)}} />;
+  } else if (computedLifecycle === 'active') {
+    if (total > 0 && scored === total) {
+      action = <Button className={styles.btn} label="Đã chấm xong" icon={CheckFat} iconWeight="fill" variant="outline" color="blue" onClick={()=>{navigate(`/panelist/events/${event.id}/judge/rounds/${round.id}`)}} />;
+    } else {
+      action = <Button className={styles.btn} label="Chấm điểm" icon={Pen} iconWeight="fill" variant="primary" color="blue" onClick={()=>{navigate(`/panelist/events/${event.id}/judge/rounds/${round.id}`)}} />;
+    }
   } else {
     action = <Button className={styles.btn} label="Chưa tới lượt chấm" variant="outline" color="blue" disabled />;
   }
@@ -82,7 +96,7 @@ function JudgeRoundCard({ round, isLast, onOpenRubric,event }) {
 
           <p className={styles.name}>{round.name}</p>
           <Badge
-            variant={round.lifecycle === 'active' ? "blueSolid" : "dashedBlue"}
+            variant={computedLifecycle === 'active' ? "blueSolid" : "dashedBlue"}
             size="sm"
             dot={false}
             icon={<CalendarBlank size={14} weight="fill" />}
