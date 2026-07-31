@@ -10,6 +10,7 @@ import TeamDetailModal from '../../../../../components/coordinator/roundResults/
 import AssignAwardModal from '../../../../../components/coordinator/roundResults/AssignAwardModal'
 import AwardsSection from '../../../../../components/coordinator/roundResults/AwardsSection'
 import RequestsSection from '../../../../../components/coordinator/roundResults/RequestsSection'
+import ViolationHandlingModal from '../../../../../components/coordinator/roundResults/ViolationHandlingModal'
 import styles from './ResultsTab.module.css'
 import axiosClient from '../../../../../api/axiosClient'
 
@@ -40,10 +41,8 @@ function computeStandings(entries, forced) {
     if (e.ended === 'eliminated') status = 'eliminated'
     else if (e.ended === 'withdrawn') status = 'withdrawn'
     else if (e.violation) { status = 'violation'; score = avg }
-    // else if (e.discrepancy) { status = 'discrepancy'; score = avg } // Tạm ẩn độ lệch chuẩn
     else if (allSubmitted) { status = 'official'; score = avg }
-    else if (forced && avg != null) { status = 'provisional'; score = avg }
-    else { status = 'pending'; score = null }
+    else { status = 'provisional'; score = avg }
     return {
       team: { id: e.team.id, name: e.team.name },
       status,
@@ -101,6 +100,8 @@ function ResultsTab() {
   const [search, setSearch] = useState('')
   const [detail, setDetail] = useState(null)
   const [awardToAssign, setAwardToAssign] = useState(null)
+  const [violationToResolve, setViolationToResolve] = useState(null)
+  const [allViolations, setAllViolations] = useState([])
 
   const [extendedAwards, setExtendedAwards] = useState([])
 
@@ -196,10 +197,32 @@ function ResultsTab() {
       setLoadingResult(true)
       try {
         const trackParam = categoryId && categoryId !== 'all' ? `&trackId=${categoryId}` : ''
-        // Giữ nguyên API gốc của bạn
+        
+        // 1. Fetch main results
         const { data } = await axiosClient.get(`/round/${roundId}/results?${trackParam.slice(1)}`)
+        
+        // 2. Fetch violations safely
+        try {
+          const violationsRes = await axiosClient.get('/system-requests/violations')
+          const violationsData = violationsRes.data
+          const violations = Array.isArray(violationsData) ? violationsData : []
+          setAllViolations(violations)
+          const violatedTeamNames = violations.map(v => v.teamName)
 
-        // 1. [GIỮ NGUYÊN] Đổ toàn bộ data JSON vào state độc nhất của bạn để SHOW danh sách
+          if (data && data.entries) {
+            data.entries = data.entries.map(e => {
+              if (e.team && violatedTeamNames.includes(e.team.name)) {
+                return { ...e, violation: true }
+              }
+              return e
+            })
+          }
+        } catch (vioErr) {
+          console.error("Lỗi lấy danh sách vi phạm:", vioErr)
+          // Silently ignore so we don't break the leaderboard
+        }
+
+        // 3. Update state
         setRoundResult(data)
 
         // 2. [BỔ SUNG] Khôi phục Stage từ trường data.publishStage trong JSON vừa nhận
@@ -386,7 +409,14 @@ function ResultsTab() {
   };
 
 
-  const gotoViolation = (team) => navigate(`/admin/coordinator/events/${eventId}/scoring`) // Vi phạm usually handled in scoring tab or specific route
+  const gotoViolation = (team) => {
+    const v = allViolations.find(req => req.teamName === team.name)
+    if (v) {
+      setViolationToResolve(v)
+    } else {
+      alert('Không tìm thấy thông tin chi tiết vi phạm của đội này.')
+    }
+  }
   const openScoring = () => navigate(`/admin/coordinator/events/${eventId}/scoring?round=${roundId}`)
   const openAudit = () => navigate(`/admin/coordinator/events/${eventId}/audit?round=${roundId}`)
 
@@ -488,6 +518,15 @@ function ResultsTab() {
     }}
   />
 )}
+      {violationToResolve && (
+        <ViolationHandlingModal 
+          isOpen={true} 
+          onClose={() => setViolationToResolve(null)}
+          data={violationToResolve}
+          onOpenTeam={setDetail}
+          onOpenSubmission={() => {}}
+        />
+      )}
     </div>
   )
 }

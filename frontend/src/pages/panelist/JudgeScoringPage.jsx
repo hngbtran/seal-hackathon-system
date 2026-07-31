@@ -12,7 +12,7 @@ import styles from './JudgeScoringPage.module.css';
 import axiosClient from '../../api/axiosClient';
 
 // TẮT/BẬT MOCK DATA ĐỂ TEST GIAO DIỆN MÀ KHÔNG CẦN BACKEND
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
 
 function JudgeScoringPage() {
   const { eventId, roundId, submissionId } = useParams();

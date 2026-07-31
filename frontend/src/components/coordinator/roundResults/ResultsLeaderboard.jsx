@@ -12,7 +12,7 @@ const fmtScore = (v) => (v == null ? '—' : v.toFixed(2))
 const STATUS_FILTERS = [
   { key: 'all', label: 'Tất cả' },
   { key: 'official', label: 'Đã chốt điểm', dot: 'green' },
-  { key: 'provisional', label: 'Tạm tính', dot: 'orange' },
+  { key: 'provisional', label: 'Tạm tính', dot: 'blue' },
   // { key: 'discrepancy', label: 'Cần rà soát', dot: 'orange' },
   { key: 'violation', label: 'Vi phạm', dot: 'orange' },
 ]
@@ -21,7 +21,7 @@ const STATUS_FILTERS = [
 function StatusCell({ row, onResolveViolation }) {
   if (row.status === 'violation') {
     return (
-      <Tooltip content="Gắn cờ vi phạm — nhấn để xử lý" bgColor="orange">
+      <Tooltip content="Xử lí vi phạm" bgColor="orange">
         <button type="button" className={styles.flagBtn} onClick={() => onResolveViolation(row.team)}>
           <Flag size={26} weight="fill" />
         </button>
@@ -37,7 +37,7 @@ function StatusCell({ row, onResolveViolation }) {
   //   )
   // }
   if (row.status === 'provisional') {
-    return <Badge variant="orange" label="Tạm tính" size="sm" dot={false} />
+    return <Badge variant="blueSolid" label="Tạm tính" size="sm" dot={false} />
   }
   if (row.status === 'official') {
     return (
@@ -158,7 +158,9 @@ function ResultsLeaderboard({ rows, totalCount, search, onSearch, filter, onFilt
                 </span>
 
                 <span className={styles.cTeam}>
-                  <span className={muted ? styles.teamName + ' ' + styles.strike : styles.teamName}>{row.team.name}</span>
+                  <span className={muted ? styles.teamName + ' ' + styles.strike : styles.teamName}>
+                    {row.team.name}
+                  </span>
                 </span>
 
                 <span className={styles.cJudges}>
@@ -181,7 +183,7 @@ function ResultsLeaderboard({ rows, totalCount, search, onSearch, filter, onFilt
                     <span className={styles.scoreNone}>—</span>
                   ) : (
                     <div className={styles.scoreWrap}>
-                      <span className={row.status === 'official' ? styles.scoreVal : styles.scoreTemp}>
+                      <span className={row.status === 'violation' ? styles.scoreTemp : styles.scoreVal}>
                         {fmtScore(row.score)}
                         <span className={styles.scoreMax}>/10</span>
                       </span>
