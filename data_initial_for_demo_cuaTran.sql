@@ -123,7 +123,7 @@ BEGIN
     -- BƯỚC 4: Rubric & Criterions
     -- =========================================================================
     INSERT INTO scoring_template (name, description, url, create_at, update_at, usage_count, status, is_tie_breaking, standard_deviation)
-    VALUES ('Bộ tiêu chí chấm điểm SEAL Hackathon Summer 2026 – Emerging Tech', 'Bộ tiêu chí đánh giá sản phẩm dự thi trên thang điểm 10 cho mỗi tiêu chí và tổng hợp theo trọng số (tổng 100%). Áp dụng thống nhất cho cả Vòng Sơ loại và Vòng Chung kết.', NULL, NOW(), NOW(), 2, 'PUBLISHED', false, 0) RETURNING id INTO v_scoring_template_id;
+    VALUES ('Bộ tiêu chí chấm điểm SEAL Hackathon Summer 2026 – Emerging Tech', 'Bộ tiêu chí đánh giá sản phẩm dự thi trên thang điểm 10 cho mỗi tiêu chí và tổng hợp theo trọng số (tổng 100%). Áp dụng thống nhất cho cả Vòng Sơ loại và Vòng Chung kết.', NULL, NOW(), NOW(), 2, 'PUBLISHED', false, 15) RETURNING id INTO v_scoring_template_id;
 
     INSERT INTO criterion (name, description, weight, max_range, scoring_template_id) VALUES
         ('Ý tưởng & Tính sáng tạo', 'Mức độ mới mẻ, độc đáo và khả thi của ý tưởng; khả năng vận dụng AI, IoT hoặc Blockchain để giải quyết một vấn đề thực tế. Thang điểm 10, trọng số 25%.', 25, 10, v_scoring_template_id),

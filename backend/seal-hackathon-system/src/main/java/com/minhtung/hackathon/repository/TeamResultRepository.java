@@ -151,6 +151,7 @@ public interface TeamResultRepository
             "LEFT JOIN FETCH js.judgeAssignment ja " +
             "LEFT JOIN FETCH ja.user " +
             "WHERE tr.round.id = :roundId " +
+            "AND t.status = com.minhtung.hackathon.enums.TeamStatus.APPROVED " +
             "ORDER BY tr.ranking ASC")
     List<TeamResult> findBasicFullByRoundId(@Param("roundId") Long roundId);
 

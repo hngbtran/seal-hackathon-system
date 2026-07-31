@@ -438,7 +438,7 @@ public class TeamResultService {
                 .map(ma -> ma.getTrack().getId())
                 .collect(Collectors.toSet());
 
-        // 5. Query dữ liệu bằng cách kết hợp 2 Query để tránh MultipleBagFetchException
+        // 5.
         List<TeamResult> teamResults = teamResultRepository.findBasicFullByRoundId(roundId);
         if (!teamResults.isEmpty()) {
             teamResultRepository.fetchJudgeScoreDetailsByRoundId(roundId);
@@ -498,7 +498,7 @@ public class TeamResultService {
                     .rank(calculatedRank)
                     .avgScore(tr.getTotalScore())
                     .status(null)
-                    .discrepancy(false)
+                    .discrepancy(tr.getIsDiscrepancy())
                     .judges(null)
                     .build();
         }
@@ -513,7 +513,7 @@ public class TeamResultService {
                 .rank(calculatedRank)
                 .avgScore(tr.getTotalScore())
                 .status(tr.getStatus() != null ? tr.getStatus().name() : null)
-                .discrepancy(false)
+                .discrepancy(tr.getIsDiscrepancy())
                 .judges(judges)
                 .build();
     }
@@ -586,4 +586,7 @@ public class TeamResultService {
                     .build();
         }
     }
+
+
+
 }

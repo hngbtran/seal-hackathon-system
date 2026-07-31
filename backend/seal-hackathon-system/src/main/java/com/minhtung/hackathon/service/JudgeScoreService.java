@@ -15,10 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -191,10 +188,14 @@ public class JudgeScoreService {
                             return newResult;
                         });
 
+                // [NEW] Tính và set cờ discrepancy dựa trên toàn bộ điểm chính thức hiện có
                 teamResult.setUpdatedAt(LocalDateTime.now());
                 teamResult.setTotalScore(averageScore);
 
-                // 3. GÁN LIÊN KẾT 2 CHIỀU GIỮA TeamResult VÀ JudgeScore
+
+
+                boolean hasDiscrepancy = calculateHasDiscrepancy(round, officialScores);
+                teamResult.setIsDiscrepancy(hasDiscrepancy);
 
                 // Phía Owning Side (JudgeScore): Đảm bảo JudgeScore có khóa ngoại team_result_id
                 savedJudgeScore.setTeamResult(teamResult);
@@ -213,6 +214,8 @@ public class JudgeScoreService {
                 teamResultRepository.save(teamResult);
             }
         }
+
+
 
         return mapToResponse(savedJudgeScore);
     }
@@ -297,6 +300,8 @@ public class JudgeScoreService {
                                         .build()
                         )
                         .toList();
+
+
 
         return JudgeScoreResponse.builder()
                 .id(judgeScore.getId())
@@ -413,7 +418,64 @@ public class JudgeScoreService {
         return details;
     }
 
+    /**
+     * Tính xem TeamResult có bị "lệch chuẩn" hay không, dựa trên độ lệch chuẩn
+     * điểm số theo từng tiêu chí, so với ngưỡng % config ở ScoringTemplate.
+     * Chỉ cần 1 tiêu chí vượt ngưỡng -> toàn bộ TeamResult bị đánh dấu discrepancy = true.
+     */
+    private boolean calculateHasDiscrepancy(Round round, List<JudgeScore> officialScores) {
 
+        ScoringTemplate scoringTemplate = round.getScoringTemplate();
+        if (scoringTemplate == null) {
+            return false; // Không có config ngưỡng -> mặc định không lệch
+        }
+
+        double thresholdPercent = scoringTemplate.getStandardDeviation(); // vd: 15.0 nghĩa là 15%
+
+        // Gom điểm theo từng tiêu chí: criterionId -> danh sách điểm của các giám khảo
+        Map<Long, List<Double>> scoresByCriterion = new HashMap<>();
+        Map<Long, Integer> maxScoreByCriterion = new HashMap<>();
+
+        for (JudgeScore score : officialScores) {
+            if (score.getDetails() == null) continue;
+
+            for (JudgeScoreDetail detail : score.getDetails()) {
+                Criterion criterion = detail.getCriterion();
+                if (criterion == null ) continue;
+
+                Long criterionId = criterion.getId();
+                scoresByCriterion
+                        .computeIfAbsent(criterionId, k -> new ArrayList<>())
+                        .add(detail.getScore());
+
+                maxScoreByCriterion.putIfAbsent(criterionId, criterion.getMaxRange());
+            }
+        }
+
+        // Chỉ cần 1 tiêu chí vượt ngưỡng là return true ngay
+        for (Map.Entry<Long, List<Double>> entry : scoresByCriterion.entrySet()) {
+            List<Double> scores = entry.getValue();
+
+            if (scores.size() < 2) continue; // cần ít nhất 2 giám khảo mới so sánh được
+
+            double mean = scores.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+
+            double variance = scores.stream()
+                    .mapToDouble(s -> Math.pow(s - mean, 2))
+                    .sum() / scores.size();
+
+            double stdDev = Math.sqrt(variance);
+
+            double maxScore = maxScoreByCriterion.getOrDefault(entry.getKey(), 10);
+            double threshold = (thresholdPercent / 100.0) * maxScore;
+
+            if (stdDev > threshold) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
 
 
