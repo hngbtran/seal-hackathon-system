@@ -119,17 +119,18 @@ function MentorTeamRow({ team, onOpenRequests }) {
         )}
       </td>
 
-      {/* Kết quả gần nhất — chỉ đội đã có kết quả (top) mới hiện điểm */}
+      {/* Kết quả gần nhất — hiện điểm khi đã công bố chính thức (stage 3) */}
       <td>
         <div className={styles.resultCell}>
           <Badge variant={result.variant} size="sm" dot={false} label={result.text(team)} />
-          {team.status === 'top' ? (
-            <span className={styles.resultScore}>{team.score}/10</span>
+          {team.score != null && team.score > 0 ? (
+            <span className={styles.resultScore}>{Number(team.score).toFixed(2)}/10</span>
           ) : (
             <span className={styles.muted}>—</span>
           )}
         </div>
       </td>
+
 
       {/* Câu hỏi chờ */}
       <td>

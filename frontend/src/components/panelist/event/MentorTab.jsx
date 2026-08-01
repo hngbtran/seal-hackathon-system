@@ -5,6 +5,7 @@ import Button from '../../shared/Button'
 import MentorTeamTable from './MentorTeamTable'
 import MentorRequestModal from './MentorRequestModal'
 import styles from './MentorTab.module.css'
+import axiosClient from '../../../api/axiosClient'
 
 // "Vừa xong" / "x phút trước" / "x giờ trước" / "x ngày trước"
 function timeAgo(iso) {
@@ -27,7 +28,105 @@ function timeAgo(iso) {
  */
 function MentorTab({ event }) {
   const mentor = event.assignment?.mentor ?? {}
-  const teams = mentor.teams ?? []
+  const rawTeams = mentor.teams ?? []
+  // Milestones = danh sách các vòng thi (theo thứ tự vòng)
+  const milestones = mentor.milestones ?? []
+  const eventId = event.id
+
+  // State lưu điểm & hạng từng team theo vòng
+  // Shape: { [teamId]: { score: number|null, rank: number|null, roundName: string|null } }
+  const [teamScoresMap, setTeamScoresMap] = useState({})
+
+  // Gọi API song song để lấy điểm của tất cả team khi component mount
+  useEffect(() => {
+    if (!eventId || rawTeams.length === 0) return
+
+    const fetchAll = async () => {
+      const results = await Promise.allSettled(
+        rawTeams.map((team) =>
+          axiosClient
+            .get(`/team-results/events/${eventId}/teams/${team.id}/results`)
+            .then((res) => ({ teamId: team.id, data: res.data }))
+        )
+      )
+
+      const map = {}
+      results.forEach((result) => {
+        if (result.status === 'fulfilled') {
+          const { teamId, data } = result.value
+          if (!Array.isArray(data) || data.length === 0) return
+
+          // Chỉ hiển thị điểm khi publishStage đã ở giai đoạn 3 (công bố chính thức)
+          // Backend trả về teamTotalScore = null nếu chưa publish ở stage >= 3.
+          // Tìm kết quả vòng mới nhất có điểm (không null).
+          const withScore = data.filter((r) => r.teamTotalScore != null)
+          if (withScore.length === 0) return
+
+          // Sắp xếp theo ordinalNumber giảm dần, lấy vòng mới nhất có điểm
+          withScore.sort((a, b) => (b.ordinalNumber ?? 0) - (a.ordinalNumber ?? 0))
+          const latest = withScore[0]
+
+          map[teamId] = {
+            score: latest.teamTotalScore,
+            rank: latest.teamRank?.rank ?? null,
+            roundName: latest.roundName ?? null,
+          }
+        }
+      })
+
+      setTeamScoresMap(map)
+    }
+
+    fetchAll()
+  }, [eventId, rawTeams.length])
+
+  // Tính danh sách teams với đầy đủ status, currentRound, stoppedRound, score, rank
+  const teams = useMemo(() => {
+    // Tìm số vòng tối đa mà bất kỳ team nào đã hoàn thành trong nhóm
+    // Dùng làm heuristic: team nào done < maxDone → đã bị loại (dừng lại)
+    const maxDone = rawTeams.reduce(
+      (max, t) => Math.max(max, t.progress?.done ?? 0),
+      0
+    )
+
+    return rawTeams.map((team) => {
+      const done = team.progress?.done ?? 0
+      const total = team.progress?.total ?? milestones.length
+
+      // Team bị loại khi có team khác đã tiến xa hơn (done < maxDone)
+      const isStopped = done < maxDone
+      const derivedStatus = isStopped ? 'stopped' : 'competing'
+
+      // Badge hiển thị vòng mới nhất mà team đã tham gia (theo done của team đó)
+      // - Nếu done = 0: vòng 1 (chưa nộp bài vòng nào)
+      // - Nếu done = 1: milestones[0] (vòng 1 là vòng cuối của team)
+      // - Nếu done = 2: milestones[1] (vòng 2 là vòng đang/đã ở)
+      const teamRoundIndex = Math.max(1, done)
+      const teamRoundLabel =
+        milestones[teamRoundIndex - 1]?.title ?? `Vòng ${teamRoundIndex}`
+
+      // Tên vòng dừng — chỉ dùng khi isStopped: là vòng cuối team còn tham gia
+      const stoppedRoundName = isStopped
+        ? (done > 0 ? milestones[done - 1]?.title ?? `Vòng ${done}` : milestones[0]?.title ?? 'Vòng 1')
+        : null
+
+      // Lấy điểm từ API đã fetch (chỉ hiển thị khi đã công bố stage 3)
+      const scoreData = teamScoresMap[team.id] ?? null
+      const finalScore = scoreData?.score ?? null
+      const finalRank = scoreData?.rank ?? 0
+
+      return {
+        ...team,
+        status: derivedStatus,
+        currentRound: teamRoundLabel,   // Vòng mới nhất của chính team đó (không phải vòng sự kiện)
+        stoppedRound: stoppedRoundName,
+        score: finalScore,
+        rank: finalRank,
+      }
+    })
+  }, [rawTeams, milestones, teamScoresMap])
+
+
   const requests = mentor.requests ?? []
 
   const [activeTeam, setActiveTeam] = useState(null)
