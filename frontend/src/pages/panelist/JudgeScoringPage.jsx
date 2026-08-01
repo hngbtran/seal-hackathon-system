@@ -52,7 +52,7 @@ function JudgeScoringPage() {
 
         let subListData, roundsList;
 
-        if (USE_MOCK_DATA) {
+        if (!USE_MOCK_DATA) {
           await new Promise(resolve => setTimeout(resolve, 500));
           subListData = {
             teamName: "FPT.O-H",
