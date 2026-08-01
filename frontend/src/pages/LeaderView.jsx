@@ -365,13 +365,8 @@ function LeaderView() {
       confirmLabel: 'Xác nhận',
       denyLabel: 'Không',
       onConfirm: () => {
-        axios
-          .put(`http://localhost:8080/api/team/promote/${id}`, {}, {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}` // Gửi kèm token để kiểm tra bạn đúng là Leader hiện tại không
-            }
-          })
+        axiosClient
+          .put(`/team/promote/${id}`)
           .then((response) => {
             console.log(response.data);
             addToast({ variant: 'success', title: 'Thành công', message: 'Đã chuyển giao quyền Trưởng nhóm thành công!' })
