@@ -8,11 +8,13 @@ import ScoringPanel from '../../components/panelist/scoring/ScoringPanel';
 import ScoringCriteriaModal from '../../components/panelist/event/judgeRoundDetail/ScoringCriteriaModal';
 import ReportViolationModal from '../../components/panelist/scoring/ReportViolationModal';
 import RequestEditModal from '../../components/panelist/scoring/RequestEditModal';
+import ConfirmModal from '../../components/shared/ConfirmModal';
+import ToastContainer from '../../components/shared/ToastContainer';
 import styles from './JudgeScoringPage.module.css';
 import axiosClient from '../../api/axiosClient';
 
 // TẮT/BẬT MOCK DATA ĐỂ TEST GIAO DIỆN MÀ KHÔNG CẦN BACKEND
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
 
 function JudgeScoringPage() {
   const { eventId, roundId, submissionId } = useParams();
@@ -41,6 +43,17 @@ function JudgeScoringPage() {
 // }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Toast State
+  const [toasts, setToasts] = useState([]);
+  const addToast = (toast) => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, ...toast }]);
+  };
+  const removeToast = (id) => setToasts(prev => prev.filter(t => t.id !== id));
+
+  // Confirm Modal State
+  const [confirmConfig, setConfirmConfig] = useState({ isOpen: false });
 
   const dynamicBackLink = `/panelist/events/${eventId}/judge/rounds/${roundId}`;
 
@@ -201,47 +214,56 @@ function JudgeScoringPage() {
 
       await axiosClient.post('/judge-scores', backendPayload);
       setTeam(prev => ({ ...prev, status: 'draft' })); // Đổi trạng thái UI thành nháp
-      alert("Đã lưu bản nháp thành công!");
+      addToast({ variant: 'success', title: 'Thành công', message: 'Đã lưu bản nháp thành công!' });
     } catch (err) {
-      alert(err.response?.data?.message || 'Lưu bản nháp thất bại.');
+      addToast({ variant: 'error', title: 'Lỗi', message: err.response?.data?.message || 'Lưu bản nháp thất bại.' });
     }
   };
 
   //  2. XỬ LÝ NỘP ĐIỂM CHÍNH THỨC (status: 'SUBMITTED' hoặc 'DONE')
-  const handleSubmit = async (scoringPanelPayload) => {
+  const handleSubmit = (scoringPanelPayload) => {
     if (isReScoringMode) {
       setPendingReScorePayload(scoringPanelPayload);
       setIsRequestEditModalOpen(true);
       return;
     }
 
-    try {
-      if (window.confirm('Bạn có chắc chắn muốn nộp điểm số này? Điểm sau khi nộp sẽ không thể tự chỉnh sửa.')) {
+    const backendPayload = {
+      submissionId: Number(submissionId),
+      comment: scoringPanelPayload.overall || "",
+      status: "SUBMITTED",
+      details: Object.keys(scoringPanelPayload.scores || {}).map((criterionId) => ({
+        criterionId: Number(criterionId),
+        score: Number(scoringPanelPayload.scores[criterionId]),
+        comment: scoringPanelPayload.notes?.[criterionId] || ""
+      }))
+    };
 
-        const backendPayload = {
-          submissionId: Number(submissionId),
-          comment: scoringPanelPayload.overall || "",
-          status: "SUBMITTED", //  Đánh dấu nộp chính thức để khóa chỉnh sửa
-          details: Object.keys(scoringPanelPayload.scores || {}).map((criterionId) => ({
-            criterionId: Number(criterionId),
-            score: Number(scoringPanelPayload.scores[criterionId]),
-            comment: scoringPanelPayload.notes?.[criterionId] || ""
-          }))
-        };
-
-        if (!backendPayload.details || backendPayload.details.length < rubric.criteria.length) {
-          alert("Vui lòng nhập đầy đủ điểm cho các tiêu chí trước khi nộp.");
-          return;
-        }
-
-        await axiosClient.post('/judge-scores', backendPayload);
-        setTeam(prev => ({ ...prev, status: 'done' }));
-        alert("Nộp điểm chấm thi thành công!");
-        navigate(dynamicBackLink);
-      }
-    } catch (err) {
-      alert(err.response?.data?.message || 'Nộp điểm chấm thi thất bại.');
+    if (!backendPayload.details || backendPayload.details.length < rubric.criteria.length) {
+      addToast({ variant: 'warning', title: 'Lưu ý', message: 'Vui lòng nhập đầy đủ điểm cho các tiêu chí trước khi nộp.' });
+      return;
     }
+
+    setConfirmConfig({
+      isOpen: true,
+      title: "Xác nhận nộp điểm",
+      message: "Bạn có chắc chắn muốn nộp điểm số này? Điểm sau khi nộp sẽ không thể tự chỉnh sửa.",
+      confirmLabel: "Nộp điểm",
+      denyLabel: "Hủy",
+      variant: "warning",
+      onCancel: () => setConfirmConfig({ isOpen: false }),
+      onConfirm: async () => {
+        setConfirmConfig({ isOpen: false });
+        try {
+          await axiosClient.post('/judge-scores', backendPayload);
+          setTeam(prev => ({ ...prev, status: 'done' }));
+          addToast({ variant: 'success', title: 'Thành công', message: 'Nộp điểm chấm thi thành công!' });
+          setTimeout(() => navigate(dynamicBackLink), 1500);
+        } catch (err) {
+          addToast({ variant: 'error', title: 'Lỗi', message: err.response?.data?.message || 'Nộp điểm chấm thi thất bại.' });
+        }
+      }
+    });
   };
 
   const handleSubmitRequestEdit = async (reason) => {
@@ -261,12 +283,12 @@ function JudgeScoringPage() {
       };
 
       await axiosClient.post(`/api/v1/panelist/submissions/${submissionId}/request-edit`, backendPayload);
-      alert('Yêu cầu đã được gửi thành công, vui lòng chờ BTC duyệt.');
+      addToast({ variant: 'success', title: 'Thành công', message: 'Yêu cầu đã được gửi thành công, vui lòng chờ BTC duyệt.' });
       setIsRequestEditModalOpen(false);
       setIsReScoringMode(false);
       setPendingReScorePayload(null);
     } catch (err) {
-      alert(err.response?.data?.message || 'Không thể gửi yêu cầu mở khóa.');
+      addToast({ variant: 'error', title: 'Lỗi', message: err.response?.data?.message || 'Không thể gửi yêu cầu mở khóa.' });
     }
   };
 
@@ -279,8 +301,9 @@ function JudgeScoringPage() {
       try {
         await axiosClient.put(`/submission/${submissionId}/violation`, { isViolation: false, reason: '' });
         setTeam(prev => ({ ...prev, flaggedViolation: false }));
+        addToast({ variant: 'success', title: 'Thành công', message: 'Đã hủy báo cáo vi phạm!' });
       } catch (err) {
-        alert(err.response?.data?.message || 'Không thể cập nhật trạng thái vi phạm.');
+        addToast({ variant: 'error', title: 'Lỗi', message: err.response?.data?.message || 'Không thể cập nhật trạng thái vi phạm.' });
       }
     }
   };
@@ -290,8 +313,9 @@ function JudgeScoringPage() {
       await axiosClient.put(`/submission/${submissionId}/violation`, { isViolation: true, reason });
       setTeam(prev => ({ ...prev, flaggedViolation: true }));
       setIsViolationModalOpen(false);
+      addToast({ variant: 'success', title: 'Thành công', message: 'Đã báo cáo vi phạm thành công!' });
     } catch (err) {
-      alert(err.response?.data?.message || 'Không thể cập nhật trạng thái vi phạm.');
+      addToast({ variant: 'error', title: 'Lỗi', message: err.response?.data?.message || 'Không thể cập nhật trạng thái vi phạm.' });
     }
   };
 
@@ -368,6 +392,9 @@ function JudgeScoringPage() {
         onSubmit={handleSubmitRequestEdit}
         teamName={team?.name || ''}
       />
+
+      <ConfirmModal {...confirmConfig} />
+      <ToastContainer toasts={toasts} onClose={removeToast} bottom="2em" />
     </div>
   );
 }

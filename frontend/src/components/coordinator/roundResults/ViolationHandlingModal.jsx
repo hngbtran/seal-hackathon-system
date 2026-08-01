@@ -55,7 +55,7 @@ const mockRoundForSubmission = {
   }
 }
 
-function ViolationHandlingModal({ isOpen, onClose, data, onOpenTeam, onOpenSubmission }) {
+function ViolationHandlingModal({ isOpen, onClose, data, onOpenTeam, onOpenSubmission, onHandled }) {
   const [action, setAction] = useState('ignore')
   const [reason, setReason] = useState('')
 
@@ -113,6 +113,9 @@ const handleSubmitDecision = async () => {
     // Thành công -> Báo parent component reload & Đóng modal
  
     onClose()
+    if (onHandled) {
+      onHandled()
+    }
 
   } catch (error) {
     console.error('Lỗi khi xử lý vi phạm:', error)

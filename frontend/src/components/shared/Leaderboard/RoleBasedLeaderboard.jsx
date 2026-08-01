@@ -33,7 +33,7 @@ function StatusCell({ row }) {
     );
   }
   if (row.status === 'provisional') {
-    return <Badge variant="orange" label="Tạm tính" size="sm" dot={false} />;
+    return <Badge variant="blueSolid" label="Tạm tính" size="sm" dot={false} />;
   }
   if (row.status === 'official') {
     return (
@@ -45,7 +45,7 @@ function StatusCell({ row }) {
   return <span className={styles.pending}>Chưa đủ điểm</span>;
 }
 
-function RoleBasedLeaderboard({ data = [], role = 'TEAM', stage = 1, currentJudgeId = null, myTeamData = null, myMentorTeamsData = [], onRequestEdit, onOpenChart }) {
+function RoleBasedLeaderboard({ data = [], role = 'TEAM', stage = 1, currentJudgeId = null, currentJudgeName = '', myTeamData = null, myMentorTeamsData = [], onRequestEdit, onOpenChart }) {
   const [expandedRows, setExpandedRows] = useState({});
 
   const toggleRow = (id) => {
@@ -54,7 +54,7 @@ function RoleBasedLeaderboard({ data = [], role = 'TEAM', stage = 1, currentJudg
 
   const isTableLocked = (role === 'TEAM' || role === 'LEADER' || role === 'MEMBER' || role === 'MENTOR') ? stage < 3 : stage < 2;
   const isContestant = role === 'LEADER' || role === 'MEMBER' || role === 'TEAM';
-  
+
   // Lấy data trực tiếp từ props thay vì tự query trong mảng data
   const myTeam = isContestant ? myTeamData : null;
   const myMentorTeams = role === 'MENTOR' ? myMentorTeamsData : [];
@@ -103,8 +103,8 @@ function RoleBasedLeaderboard({ data = [], role = 'TEAM', stage = 1, currentJudg
         <LockKey size={48} weight="fill" />
         <h3 className={styles.title}>Đang tổng hợp kết quả</h3>
         <p className={styles.desc}>
-          {role === 'JUDGE' 
-            ? 'Ban tổ chức đang thu thập điểm từ các giám khảo. Kết quả sơ bộ sẽ hiển thị khi hoàn tất.' 
+          {role === 'JUDGE'
+            ? 'Ban tổ chức đang thu thập điểm từ các giám khảo. Kết quả sơ bộ sẽ hiển thị khi hoàn tất.'
             : 'Điểm số đang được ban tổ chức và ban giám khảo tổng hợp. Vui lòng quay lại sau.'}
         </p>
       </div>
@@ -189,7 +189,7 @@ function RoleBasedLeaderboard({ data = [], role = 'TEAM', stage = 1, currentJudg
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        
+
         <div className={styles.sortCol}>
           <Dropdown
             options={SORT_OPTIONS}
@@ -212,7 +212,7 @@ function RoleBasedLeaderboard({ data = [], role = 'TEAM', stage = 1, currentJudg
           <span className={styles.cTeam}>Đội thi</span>
           {showDetailedJudges && <span className={styles.cJudges}>Điểm tổng quát</span>}
           <span className={styles.cScore}>{role === 'JUDGE' ? 'Điểm trung bình' : 'Điểm tổng'}</span>
-          
+
           {showDiscrepancyWarning && <span className={styles.cAction}>Trạng thái</span>}
           {showDetailedJudges && <span className={styles.cStatus}>Trạng thái</span>}
           {showDetailedJudges && <span className={styles.cExpand}></span>}
@@ -253,7 +253,7 @@ function RoleBasedLeaderboard({ data = [], role = 'TEAM', stage = 1, currentJudg
 
             return (
               <div className={`${styles.rowWrapper} ${isBanned ? styles.bannedRow : ''}`} key={row.id}>
-                <div 
+                <div
                   className={`${styles.row} ${gridClass} ${showDetailedJudges && !isBanned ? styles.clickableRow : ''}`}
                   onClick={showDetailedJudges && !isBanned ? () => toggleRow(row.id) : undefined}
                 >
@@ -293,7 +293,7 @@ function RoleBasedLeaderboard({ data = [], role = 'TEAM', stage = 1, currentJudg
                   {/* Cột Điểm tổng / TB */}
                   <span className={styles.cScore}>
                     <div className={styles.scoreWrap} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span className={isOfficial && !isBanned ? styles.scoreVal : styles.scoreTemp}>
+                      <span className={styles.scoreVal}>
                         {isBanned ? '—' : fmtScore(row.avgScore)}
                         {!isBanned && <span className={styles.scoreMax}>/10</span>}
                       </span>
@@ -316,8 +316,8 @@ function RoleBasedLeaderboard({ data = [], role = 'TEAM', stage = 1, currentJudg
                         row.discrepancy ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                             <Tooltip content="Chênh lệch điểm giữa các giám khảo" bgColor="white" textColor="orangeTxt">
-                              <span 
-                                className={styles.iconWarn} 
+                              <span
+                                className={styles.iconWarn}
                                 style={{ cursor: 'pointer' }}
                                 onClick={() => onOpenChart?.(row.id)}
                               >
@@ -325,16 +325,16 @@ function RoleBasedLeaderboard({ data = [], role = 'TEAM', stage = 1, currentJudg
                               </span>
                             </Tooltip>
                             {/* Nếu BGK hiện tại nằm trong nhóm chấm đội này, cho phép sửa điểm */}
-                            {(row.judges || []).some(j => j.judgeId === currentJudgeId) && (
-                               <Button 
-                                 label="Sửa điểm" 
-                                 variant="solid" 
-                                 color="orange" 
-                                 size="sm" 
-                                 icon={PencilSimple} 
-                                 style={{ padding: '0.4em 0.7em', fontSize: '0.85rem' }} 
-                                 onClick={() => onRequestEdit?.(row.id)}
-                               />
+                            {(row.judges || []).some(j => j.judgeId === currentJudgeId || j.judgeName === currentJudgeName) && (
+                              <Button
+                                label="Sửa điểm"
+                                variant="solid"
+                                color="orange"
+                                size="sm"
+                                icon={PencilSimple}
+                                style={{ padding: '0.4em 0.7em', fontSize: '0.85rem' }}
+                                onClick={() => onRequestEdit?.(row.id)}
+                              />
                             )}
                           </div>
                         ) : (

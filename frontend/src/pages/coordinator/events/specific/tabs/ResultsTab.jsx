@@ -10,6 +10,7 @@ import TeamDetailModal from '../../../../../components/coordinator/roundResults/
 import AssignAwardModal from '../../../../../components/coordinator/roundResults/AssignAwardModal'
 import AwardsSection from '../../../../../components/coordinator/roundResults/AwardsSection'
 import RequestsSection from '../../../../../components/coordinator/roundResults/RequestsSection'
+import ViolationHandlingModal from '../../../../../components/coordinator/roundResults/ViolationHandlingModal'
 import styles from './ResultsTab.module.css'
 import axiosClient from '../../../../../api/axiosClient'
 
@@ -40,10 +41,9 @@ function computeStandings(entries, forced) {
     if (e.ended === 'eliminated') status = 'eliminated'
     else if (e.ended === 'withdrawn') status = 'withdrawn'
     else if (e.violation) { status = 'violation'; score = avg }
-    // else if (e.discrepancy) { status = 'discrepancy'; score = avg } // Tạm ẩn độ lệch chuẩn
+    else if (e.discrepancy) { status = 'discrepancy'; score = avg }
     else if (allSubmitted) { status = 'official'; score = avg }
-    else if (forced && avg != null) { status = 'provisional'; score = avg }
-    else { status = 'pending'; score = null }
+    else { status = 'provisional'; score = avg }
     return {
       team: { id: e.team.id, name: e.team.name },
       status,
@@ -101,8 +101,12 @@ function ResultsTab() {
   const [search, setSearch] = useState('')
   const [detail, setDetail] = useState(null)
   const [awardToAssign, setAwardToAssign] = useState(null)
-
+  const [violationToResolve, setViolationToResolve] = useState(null)
+  const [allViolations, setAllViolations] = useState([])
   const [extendedAwards, setExtendedAwards] = useState([])
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
+
+  const triggerRefresh = () => setRefreshTrigger(prev => prev + 1)
 
 
   // ---- Biến derive từ state ----
@@ -196,10 +200,32 @@ function ResultsTab() {
       setLoadingResult(true)
       try {
         const trackParam = categoryId && categoryId !== 'all' ? `&trackId=${categoryId}` : ''
-        // Giữ nguyên API gốc của bạn
+        
+        // 1. Fetch main results
         const { data } = await axiosClient.get(`/round/${roundId}/results?${trackParam.slice(1)}`)
+        
+        // 2. Fetch violations safely
+        try {
+          const violationsRes = await axiosClient.get('/system-requests/violations')
+          const violationsData = violationsRes.data
+          const violations = Array.isArray(violationsData) ? violationsData : []
+          setAllViolations(violations)
+          const violatedTeamNames = violations.map(v => v.teamName)
 
-        // 1. [GIỮ NGUYÊN] Đổ toàn bộ data JSON vào state độc nhất của bạn để SHOW danh sách
+          if (data && data.entries) {
+            data.entries = data.entries.map(e => {
+              if (e.team && violatedTeamNames.includes(e.team.name)) {
+                return { ...e, violation: true }
+              }
+              return e
+            })
+          }
+        } catch (vioErr) {
+          console.error("Lỗi lấy danh sách vi phạm:", vioErr)
+          // Silently ignore so we don't break the leaderboard
+        }
+
+        // 3. Update state
         setRoundResult(data)
 
         // 2. [BỔ SUNG] Khôi phục Stage từ trường data.publishStage trong JSON vừa nhận
@@ -243,7 +269,7 @@ function ResultsTab() {
       }
     }
     fetchResult()
-  }, [roundId, isAll, categoryId])
+  }, [roundId, isAll, categoryId, refreshTrigger])
 
   //-----------------fetch tracks/categories tu API
   useEffect(() => {
@@ -300,7 +326,7 @@ function ResultsTab() {
     { key: 'all', label: 'Tất cả', count: counts.all, tone: 'blue', icon: ListChecks },
     { key: 'official', label: 'Đã chốt điểm', count: counts.official, tone: 'green', icon: SealCheck },
     { key: 'provisional', label: 'Tạm tính', count: counts.provisional, tone: 'orange', icon: Clock },
-    // { key: 'discrepancy', label: 'Cần rà soát', count: counts.discrepancy, tone: 'orange', icon: Scales },
+    { key: 'discrepancy', label: 'Cần rà soát', count: counts.discrepancy, tone: 'orange', icon: Scales },
     { key: 'violation', label: 'Vi phạm', count: counts.violation, tone: 'orange', icon: Flag },
   ]
 
@@ -311,21 +337,16 @@ function ResultsTab() {
 
 
   const handleAdvance = async () => {
-    // Xác định trackId hiện tại để gửi lên Backend, nếu chọn "Tất cả" thì truyền chuỗi 'all' hoặc xử lý tùy BE
-    const trackId = categoryId === 'all' ? 'all' : categoryId;
-
-    // Lấy stage hiện tại từ state dựa theo Key roundId gốc của bạn
+    const trackQuery = categoryId && categoryId !== 'all' ? `?trackId=${categoryId}` : '';
     const currentStage = stageByRound[roundId] || 1;
     const nextStage = Math.min(3, currentStage + 1);
 
     if (currentStage === 3) return;
 
     try {
-      // 1. Gọi API lưu trạng thái ở Backend trước
-      await axiosClient.post(`/round/${roundId}/publish/stage/${nextStage}?trackId=${trackId}`);
-      console.log(`Backend cập nhật thành công Stage ${nextStage} cho Track ${trackId}`);
+      await axiosClient.post(`/round/${roundId}/publish/stage/${nextStage}${trackQuery}`);
+      console.log(`Backend cập nhật thành công Stage ${nextStage}${trackQuery}`);
 
-      // 2. Khi API thành công, chạy đúng logic set state đồng bộ ban đầu của bạn
       setStageByRound((p) => {
         const next = (p[roundId] || 1) + 1;
 
@@ -352,25 +373,21 @@ function ResultsTab() {
   };
 
   const handleRollback = async () => {
-    const trackId = categoryId === 'all' ? 'all' : categoryId;
-
+    const trackQuery = categoryId && categoryId !== 'all' ? `?trackId=${categoryId}` : '';
     const currentStage = stageByRound[roundId] || 1;
     const prevStage = Math.max(1, currentStage - 1);
 
     if (currentStage === 1) return;
 
     try {
-      // 1. Gọi API báo giảm cấp độ xuống Backend
-      await axiosClient.post(`/round/${roundId}/track/${trackId}/publish/stage/${prevStage}`);
-      console.log(`Backend rollback thành công về Stage ${prevStage} cho Track ${trackId}`);
+      await axiosClient.post(`/round/${roundId}/publish/stage/${prevStage}${trackQuery}`);
+      console.log(`Backend rollback thành công về Stage ${prevStage}${trackQuery}`);
 
-      // 2. Cập nhật state quay lùi lại y hệt cấu trúc gốc của bạn
       setStageByRound((p) => {
         const prev = (p[roundId] || 1) - 1;
         return { ...p, [roundId]: Math.max(1, prev) };
       });
 
-      // Reset lại màn hình đếm ngược review nếu quay ngược hẳn về Stage 1
       if (prevStage === 1) {
         setReviewOverride((rp) => {
           const updated = { ...rp };
@@ -386,7 +403,14 @@ function ResultsTab() {
   };
 
 
-  const gotoViolation = (team) => navigate(`/admin/coordinator/events/${eventId}/scoring`) // Vi phạm usually handled in scoring tab or specific route
+  const gotoViolation = (team) => {
+    const v = allViolations.find(req => req.teamName === team.name)
+    if (v) {
+      setViolationToResolve(v)
+    } else {
+      alert('Không tìm thấy thông tin chi tiết vi phạm của đội này.')
+    }
+  }
   const openScoring = () => navigate(`/admin/coordinator/events/${eventId}/scoring?round=${roundId}`)
   const openAudit = () => navigate(`/admin/coordinator/events/${eventId}/audit?round=${roundId}`)
 
@@ -460,6 +484,8 @@ function ResultsTab() {
             <RequestsSection
               onOpenTeam={setDetail}
               onOpenSubmission={() => {}}
+              onRefresh={triggerRefresh}
+              refreshTrigger={refreshTrigger}
             />
           </div>
         </div>
@@ -488,6 +514,19 @@ function ResultsTab() {
     }}
   />
 )}
+      {violationToResolve && (
+        <ViolationHandlingModal 
+          isOpen={true} 
+          onClose={() => setViolationToResolve(null)}
+          onHandled={() => {
+            setViolationToResolve(null)
+            triggerRefresh()
+          }}
+          data={violationToResolve}
+          onOpenTeam={setDetail}
+          onOpenSubmission={() => {}}
+        />
+      )}
     </div>
   )
 }
