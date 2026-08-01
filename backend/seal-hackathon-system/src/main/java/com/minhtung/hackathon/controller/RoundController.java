@@ -1,13 +1,16 @@
 package com.minhtung.hackathon.controller;
 
+import com.minhtung.hackathon.dto.response.MyContextResponseDTO;
 import com.minhtung.hackathon.dto.response.ViewTeamListRespone;
 import com.minhtung.hackathon.dto.round.RoundDetailsResponse;
+import com.minhtung.hackathon.dto.round.RoundInfoResponseDTO;
 import com.minhtung.hackathon.dto.round.RoundRequest;
 import com.minhtung.hackathon.entity.Round;
 import com.minhtung.hackathon.repository.RoundRepository;
 import com.minhtung.hackathon.repository.UserRepository;
 import com.minhtung.hackathon.security.JwtUtil;
 import com.minhtung.hackathon.service.RoundService;
+import com.minhtung.hackathon.service.TeamResultService;
 import com.minhtung.hackathon.service.TeamService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,7 +34,7 @@ public class RoundController {
     private final UserRepository userRepository;
     private final RoundService roundService;
     private final TeamService teamService ;
-
+    private final TeamResultService teamResultService;
     // api admin view Coming Round
 //    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/coming")
@@ -54,10 +57,11 @@ public class RoundController {
     @GetMapping
     public ResponseEntity<?> getRounds(@RequestHeader("Authorization") String auth,
                                        @RequestParam(required = false) Long eventId) {
+        Integer uid=getUid(auth);
         if (getUid(auth) == null) return unauthorized();
 
 
-        return ResponseEntity.ok(roundService.getRoundsByEventId(eventId));
+        return ResponseEntity.ok(roundService.getRoundsByEventId(eventId,Integer.toUnsignedLong(uid)));
 
     }
 
@@ -100,9 +104,12 @@ public class RoundController {
      * URL: GET /api/v1/events/{eventId}/rounds
      */
     @GetMapping("/events/{eventId}/rounds")
-    public ResponseEntity<?> getRoundsByEvent(@PathVariable long eventId) {
+    public ResponseEntity<?> getRoundsByEvent(@RequestHeader("Authorization") String auth,@PathVariable long eventId) {
+        Integer uid=getUid(auth);
+        if (getUid(auth) == null) return unauthorized();
+
         try {
-            List<RoundDetailsResponse> rounds = roundService.getRoundsByEventId(eventId);
+            List<RoundDetailsResponse> rounds = roundService.getRoundsByEventId(eventId,uid);
             // Trả về danh sách (Mảng rỗng [] nếu Sự kiện chưa được cấu hình vòng thi nào)
             return ResponseEntity.ok(rounds);
         } catch (Exception e) {
@@ -116,9 +123,11 @@ public class RoundController {
      * URL: GET /api/v1/rounds/{roundId}
      */
     @GetMapping("/rounds/{roundId}")
-    public ResponseEntity<?> getRoundDetailsById(@PathVariable long roundId) {
+    public ResponseEntity<?> getRoundDetailsById(@RequestHeader("Authorization") String auth,@PathVariable long roundId) {
+        Integer uid=getUid(auth);
+        if (getUid(auth) == null) return unauthorized();
         try {
-            RoundDetailsResponse roundDetails = roundService.getRoundDetailsById(roundId);
+            RoundDetailsResponse roundDetails = roundService.getRoundDetailsById(roundId,Integer.toUnsignedLong(uid));
             return ResponseEntity.ok(roundDetails);
         } catch (IllegalArgumentException e) {
             // Trả về 404 nếu truyền sai roundId không tồn tại trong hệ thống
@@ -156,5 +165,28 @@ public class RoundController {
         return ResponseEntity.ok(
                 teamService.viewTeamByRound(roundId)
         );
+    }
+
+    //get round info
+    @GetMapping("/{roundId}/info")
+    public ResponseEntity<RoundInfoResponseDTO> getRoundInfo(@PathVariable Long roundId) {
+        RoundInfoResponseDTO response = roundService.getRoundInfo(roundId);
+        return ResponseEntity.ok(response);
+    }
+
+
+    @GetMapping("/{roundId}/my-context")
+    public ResponseEntity<?> getMyContext(@PathVariable Long roundId,@RequestHeader("Authorization") String auth) {
+
+
+        Integer uid = getUid(auth);
+        if (uid == null) {
+
+            return unauthorized();
+        }
+        boolean isMentor = false; // Nếu User này là Lecturer/Mentor thì set true, Thí sinh thì set false
+
+        MyContextResponseDTO response = teamResultService.getMyContext(roundId, Integer.toUnsignedLong(uid));
+        return ResponseEntity.ok(response);
     }
 }

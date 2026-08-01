@@ -46,7 +46,7 @@ function SummaryCard({ submission, state }) {
       {/* ── Điểm số & thông tin ── */}
       <div className={styles.sumTop}>
         <div className={`${styles.sumScore} ${scoreToneClass}`}>
-          <div className={styles.sumScoreVal}>{hasScore ? submission.score.toFixed(1) : '—'}</div>
+          <div className={styles.sumScoreVal}>{hasScore ? submission.score : '—'}</div>
           <div className={styles.sumScoreLbl}>{hasScore ? 'Điểm tổng / 10' : 'Chưa có điểm'}</div>
         </div>
         <div className={styles.sumMeta}>
@@ -62,7 +62,16 @@ function SummaryCard({ submission, state }) {
           <ChatCircleText weight="fill" size={24}/>
           Nhận xét của Ban giám khảo
         </div>
-        {comment ? (
+        {comment && Array.isArray(comment) ? (
+          <div className={styles.commentList}>
+            {comment.map((line, idx) => (
+              <div key={idx} className={styles.commentLine}>
+                <span className={styles.commentBullet}>•</span>
+                <span>{line}</span>
+              </div>
+            ))}
+          </div>
+        ) : comment ? (
           <p className={styles.commentText}>{comment}</p>
         ) : (
           <p className={styles.commentEmpty}>Chưa có nhận xét nào.</p>

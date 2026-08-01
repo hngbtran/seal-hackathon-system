@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.InvalidParameterException;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +34,7 @@ public class TeamService {
     private final SubmissionRepository submissionRepository;
     private final StudentprofileRepository studentprofileRepository;
     private final TrackRepository trackRepository;
+    private final SystemRequestRepository  systemRequestRepository;
     //tao 1 team moi
 
 
@@ -52,7 +54,7 @@ public class TeamService {
         if (newTeam.getDescription().length() > 200) {
             throw new IllegalArgumentException("mo ta không thể lớn hơn 200 kí tự ");
         }
-        if(leader.getStatus() !=UserStatus.ACCEPTED){
+        if (leader.getStatus() != UserStatus.ACCEPTED) {
             throw new IllegalArgumentException("chua duoc admin duyet ");
         }
 
@@ -174,8 +176,6 @@ public class TeamService {
     }
 
 
-
-
     //ham nay de gui join request
     // dieu kien nhung team dang o trang thai open moi co
     //can leader duyet nưa nha
@@ -284,7 +284,7 @@ public class TeamService {
             memberInvitationResponse.setId(teamRequest.getId());
             memberInvitationResponse.setTeamName(teamRepository.findById(teamRequest.getTeam().getId()).orElse(null).getName());
             memberInvitationResponse.setMemberCount(memberRepository.countByTeamIdAndStatus(teamRequest.getTeam().getId(), MemberStatus.OFFICAL));
-            memberInvitationResponse.setMaxSlots(4);
+            memberInvitationResponse.setMaxSlots(5);
             memberInvitationResponse.setMessage(teamRequest.getMessage());
             memberInvitationResponse.setDescription(teamRequest.getTeam().getDescription());
 
@@ -321,7 +321,7 @@ public class TeamService {
             res.setId(teamRequest.getId());
             res.setTeamName(teamRepository.findById(teamRequest.getTeam().getId()).orElse(null).getName());
             res.setMemberCount(memberRepository.countByTeamIdAndStatus(teamRequest.getTeam().getId(), MemberStatus.OFFICAL));
-            res.setMaxSlots(4);
+            res.setMaxSlots(5);
             responseList.add(res);
         }
         return responseList;
@@ -530,9 +530,6 @@ public class TeamService {
     }
 
 
-
-
-
     // day la ham dung de leader duyet viec leave_request trong team
     // memberId trong đây là primary key của bảng member á nha.
     @Transactional
@@ -560,8 +557,6 @@ public class TeamService {
     }
 
 
-
-
     //Admin duyet / tu choi team submisson
     //co 2 truong hop 1 appoved(khoa doi ) da dc duyey
     //hop 1 rejected(can chinh sua doi ) chua duoc duyet
@@ -585,6 +580,22 @@ public class TeamService {
         if (approve) {
             team.setStatus(TeamStatus.APPROVED);//duyet r nen khong cho khoa nua
             team.setInviteCode(null);//vo hieu hoa ma moi de khong cho ai dung lai ma moi nay
+
+            // Tự động kick tất cả thành viên dự bị (RESERVE) và gửi email thông báo
+            List<Member> reserveMembers = memberRepository.findByTeamIdAndStatus(team.getId(), MemberStatus.RESERVE);
+            for (Member reserveMember : reserveMembers) {
+                reserveMember.setStatus(MemberStatus.OUT);
+                memberRepository.save(reserveMember);
+                // Gửi email thông báo cho thành viên bị kick
+                User kickedUser = reserveMember.getMember();
+                if (kickedUser != null && kickedUser.getEmail() != null) {
+                    emailService.sendReserveMemberKickedEmail(
+                            kickedUser.getEmail(),
+                            kickedUser.getFullName() != null ? kickedUser.getFullName() : kickedUser.getEmail(),
+                            team.getName()
+                    );
+                }
+            }
         } else {
             team.setStatus(TeamStatus.REJECTED);   // Admin từ chối
             req.setStatus(RequestStatus.REJECTED);
@@ -641,11 +652,13 @@ public class TeamService {
                 TeamMembersResponseDetail membersResponse = new TeamMembersResponseDetail();
                 User user = member1.getMember();
                 Student_profile profile = studentprofileRepository.findByUserId(user.getId()).orElse(null);
-                membersResponse.setBio(profile.getBio());
-                membersResponse.setPositions(profile.getPositions());
-                membersResponse.setTechTags(profile.getTechTags());
-                membersResponse.setTopics(profile.getTopics());
-                membersResponse.setCvLink("đang hard code chưa fix chỗ cv này");
+                if (profile != null) {
+                    membersResponse.setBio(profile.getBio());
+                    membersResponse.setPositions(profile.getPositions());
+                    membersResponse.setTechTags(profile.getTechTags());
+                    membersResponse.setTopics(profile.getTopics());
+                    membersResponse.setCvLink("đang hard code chưa fix chỗ cv này");
+                }
                 membersResponse.setJoinMethod(member1.getJoinMethod().toString());
                 membersResponse.setMemberStatus(member1.getStatus().toString());
                 membersResponse.setId(member1.getId());
@@ -841,6 +854,11 @@ public class TeamService {
             if (teamRequest != null || teamInvitation != null) {
                 continue;
             }
+            //dang hard code maxTeamMember
+            if (team.getMembers().size() >= 5) {
+                continue;
+            }
+
             //neu user da co yeu cau toi team nay roi thi ko hien thi team nay nua
             if (memberList == null || memberList.isEmpty()
                     || team.getStatus() != TeamStatus.OPEN
@@ -893,7 +911,7 @@ public class TeamService {
         teamInfoResponse.setTeamName(team.getName());
         teamInfoResponse.setDescription(team.getDescription());
         teamInfoResponse.setTeamStatus(team.getStatus().toString());
-
+        teamInfoResponse.setTeamRole(member.getRole().toString());
         // set category
         TeamInfoResponse.TrackResponse category = new TeamInfoResponse.TrackResponse();
         category.setId(team.getTrack().getId());
@@ -907,6 +925,17 @@ public class TeamService {
         //trả về maxSlots
         Event event = team.getTrack().getEvent();
         teamInfoResponse.setMaxSlots(event.getMaxTeamMember());
+
+        // Lấy banReason từ SystemRequest (FLAG_VIOLATION và ACCEPTED)
+
+        systemRequestRepository.findLatestBanRequestByTeamId(team.getId())
+                .stream()
+                .findFirst()
+                .ifPresent(sr -> {
+                    String reason = sr.getHandleMessage() != null ? sr.getHandleMessage() : sr.getMessage();
+                    teamInfoResponse.setBanReason(reason);
+                });
+
 
         return teamInfoResponse;
     }
@@ -977,7 +1006,7 @@ public class TeamService {
         teamByCodeResponse.setTeamName(team.getName());
         teamByCodeResponse.setDescription(team.getDescription());
         teamByCodeResponse.setMemberCount(memberCount);
-        teamByCodeResponse.setMaxSlots(4);
+        teamByCodeResponse.setMaxSlots(5);
 
         // add nhung member vo
         List<Member> members = memberRepository.findByTeamIdAndStatus(team.getId(), MemberStatus.OFFICAL);
@@ -1039,6 +1068,12 @@ public class TeamService {
             throw new IllegalArgumentException("team khong ton tai");
         }
         teamRequestRepository.deleteAllByTeamId(team.getId());
+        List<Member> members = team.getMembers();
+        for (Member member : members) {
+            if (member.getStatus() != MemberStatus.OFFICAL) {
+                member.setStatus(MemberStatus.OUT);
+            }
+        }
         team.setStatus(TeamStatus.PENDING_APPROVAL);
         teamRepository.save(team);
         User admin = userRepository.findByEmail("admin@gmail.com").orElse(null);
@@ -1046,10 +1081,9 @@ public class TeamService {
             throw new IllegalArgumentException("admin khong ton tai");
         }
         TeamRequest teamRequest = new TeamRequest(RequestStatus.PENDING, team.getLeader(), admin, team, RequestType.TEAM_SUBMISSION, team.getName() + " gui yeu cau xin duyet doi");
+        teamRequestRepository.save(teamRequest);
         return "gui yeu cau duyet doi thanh cong";
     }
-
-
 
 
     // lấy tất cả team trong sự kiện
@@ -1216,7 +1250,7 @@ public class TeamService {
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hạng mục."));
 
         // Lấy member theo user
-        Member member = memberRepository.findByMemberIdAndStatus(uid,MemberStatus.OFFICAL)
+        Member member = memberRepository.findByMemberIdAndStatus(uid, MemberStatus.OFFICAL)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thành viên."));
 
         // Lấy team của member
@@ -1231,5 +1265,128 @@ public class TeamService {
         teamRepository.save(team);
 
         return "Cập nhật hạng mục thành công.";
+    }
+
+
+    public TeamDetailForMentorDTO getTeamDetail(Long teamId) {
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new RuntimeException("khong tim thay team"));
+
+        List<TeamMemberDTO> members = memberRepository
+                .findByTeamIdAndStatus(teamId, MemberStatus.OFFICAL)
+                .stream()
+                .map(m -> new TeamMemberDTO(
+                        m.getId(),
+                        m.getMember().getFullName(),
+                        m.getRole()
+                ))
+                .collect(Collectors.toList());
+
+        return TeamDetailForMentorDTO.builder()
+                .teamId(team.getId())
+                .teamName(team.getName())
+                .trackName(team.getTrack() != null ? team.getTrack().getName() : null)
+                .members(members)
+                .build();
+    }
+
+
+    @Transactional
+    public List<AdminTeamResponse> getAllTeamForAdmin() {
+        List<Team> teams = teamRequestRepository.findAllForAdmin();
+        Map<Long, Long> requestIds = teamRequestRepository
+                .findByTypeAndStatus(
+                        RequestType.TEAM_SUBMISSION,
+                        RequestStatus.PENDING
+                )
+                .stream()
+                .collect(Collectors.toMap(
+                        request -> request.getTeam().getId(),
+                        TeamRequest::getId,
+                        (first, ignored) -> first
+                ));
+
+        return teams.stream()
+                .map(team -> {
+                    User leader = team.getLeader();
+
+                    List<AdminTeamMemberDTO> members = team.getMembers()
+                            .stream()
+                            .map(member -> {
+                                User user = member.getMember();
+
+                                return AdminTeamMemberDTO.builder()
+                                        .userId(user.getId())
+                                        .fullName(user.getFullName())
+                                        .email(user.getEmail())
+                                        .school(user.getSchoolName())
+                                        .role(member.getRole().name())
+                                        .memberStatus(member.getStatus().name())
+                                        .joinMethod(member.getJoinMethod().name())
+                                        .build();
+                            })
+                            .toList();
+
+                    return AdminTeamResponse.builder()
+                            .teamId(team.getId())
+                            .teamName(team.getName())
+                            .teamStatus(team.getStatus().name())
+                            .description(team.getDescription())
+                            .leaderId(leader.getId())
+                            .leaderName(leader.getFullName())
+                            .leaderEmail(leader.getEmail())
+                            .memberCount(members.size())
+                            .trackId(team.getTrack() != null ? team.getTrack().getId() : null)
+                            .trackName(team.getTrack() != null ? team.getTrack().getName() : null)
+                            .createdAt(team.getCreateAt().toString())
+                            .requestId(requestIds.get(team.getId()))
+                            .members(members)
+                            .build();
+                })
+                .toList();
+
+    }
+
+    @Transactional
+    public String adminReviewTeamByLongId(Long teamId, String status) {
+        Team team = teamRepository.findById(teamId).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy team"));
+
+
+        if (team.getStatus() != TeamStatus.PENDING_APPROVAL) {
+            throw new RuntimeException("team dang khong o trang thai cho duyet ");
+
+        }
+        TeamStatus nextStatus;
+        try {
+            nextStatus = TeamStatus.valueOf(status.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(
+                    "Status chỉ được là APPROVED hoặc REJECTED"
+            );
+        }
+        if (nextStatus != TeamStatus.APPROVED
+                && nextStatus != TeamStatus.REJECTED) {
+            throw new IllegalArgumentException(
+                    "Status chỉ được là APPROVED hoặc REJECTED"
+            );
+        }
+        team.setStatus(nextStatus);
+        teamRepository.save(team);
+        return nextStatus == TeamStatus.APPROVED
+                ? "Đã chấp nhận team"
+                : "Đã từ chối team";
+    }
+
+    @Transactional
+    public String reveolekeApporve(Long teamId){
+        Team team = teamRepository.findById(teamId).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy team"));
+
+        if(team.getStatus() !=TeamStatus.APPROVED){
+            throw new RuntimeException("chỉ có thể thu hồi với những team approve") ;
+        }
+
+        team.setStatus(TeamStatus.PENDING_APPROVAL);
+        teamRepository.save(team);
+        return TeamStatus.PENDING_APPROVAL.name();
     }
 }

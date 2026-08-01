@@ -35,25 +35,25 @@ function ScoringPanel({
   onOpenRubric,
   onSaveDraft,
   onSubmit,
-  onRequestEdit,
+  isReScoringMode,
 }) {
-  const readOnly = status === 'done'
+  const readOnly = status === 'done' && !isReScoringMode
   const prefilled = status === 'draft' || status === 'done'
 
   const [scores, setScores] = useState(prefilled ? existing.scores ?? {} : {})
   const [notes, setNotes] = useState(prefilled ? existing.notes ?? {} : {})
   const [overall, setOverall] = useState(prefilled ? existing.overall ?? '' : '')
 
-  // Tổng = tổng(điểm_i × trọng_số_i / 10). Trọng số cộng lại = 10 → tổng tối đa 10.
+  // Tổng = tổng(điểm_i × trọng_số_i (%)).
   const total = criteria.reduce((sum, c) => {
     const v = scores[c.id]
-    return v == null ? sum : sum + (Number(v) * c.points) / 10
+    return v == null ? sum : sum + (Number(v) * (c.percent || 0)) / 100
   }, 0)
   const totalPct = Math.min(100, (total / 10) * 100)
   const totalBarStyle = { width: totalPct + '%' }
 
-  const scoredCount = criteria.filter((c) => scores[c.id] != null).length
-  const canSubmit = scoredCount >= 1
+  const scoredCount = criteria.filter((c) => scores[c.id] !== undefined && scores[c.id] !== null).length
+  const canSubmit = scoredCount === criteria.length
 
   const setScore = (id, v) => setScores((prev) => ({ ...prev, [id]: v }))
   const setNote = (id, v) => setNotes((prev) => ({ ...prev, [id]: v }))
@@ -78,17 +78,23 @@ function ScoringPanel({
 
       {/* Danh sách tiêu chí */}
       <div className={styles.criteria}>
-        {criteria.map((c) => (
-          <CriterionRow
-            key={c.id}
-            criterion={c}
-            value={scores[c.id]}
-            note={notes[c.id]}
-            onScore={(v) => setScore(c.id, v)}
-            onNote={(v) => setNote(c.id, v)}
-            readOnly={readOnly}
-          />
-        ))}
+        {criteria.map((c) => {
+          const isDiscrepancyLock = isReScoringMode && !(existing.discrepantCriteriaIds || []).includes(c.id);
+          const isLocked = readOnly || isDiscrepancyLock;
+
+          return (
+            <CriterionRow
+              key={c.id}
+              criterion={c}
+              value={scores[c.id]}
+              note={notes[c.id]}
+              onScore={(v) => setScore(c.id, v)}
+              onNote={(v) => setNote(c.id, v)}
+              readOnly={isLocked}
+              isDiscrepancyLock={isDiscrepancyLock}
+            />
+          )
+        })}
       </div>
 
       {/* Bình luận tổng thể */}
@@ -137,21 +143,7 @@ function ScoringPanel({
 
         <div className={styles.actions}>
           {readOnly ? (
-            existing.hasDiscrepancy ? (
-              <div className={styles.editZone}>
-                <Button
-                  label="Yêu cầu chỉnh sửa điểm"
-                  icon={PencilSimpleLine}
-                  iconWeight="fill"
-                  variant="outline"
-                  color="orange"
-                  onClick={() => onRequestEdit?.()}
-                />
-                <span className={styles.editHint}>Có chênh lệch điểm giữa các giám khảo nên được phép yêu cầu chỉnh sửa.</span>
-              </div>
-            ) : (
-              <span className={styles.lockedNote}>Điểm đã nộp, không thể chỉnh sửa.</span>
-            )
+            <span className={styles.lockedNote}>Điểm đã nộp. Cần gửi yêu cầu từ bảng xếp hạng nếu muốn chỉnh sửa.</span>
           ) : (
             <div className={styles.actionGroup}>
               <div className={styles.actionBtns}>

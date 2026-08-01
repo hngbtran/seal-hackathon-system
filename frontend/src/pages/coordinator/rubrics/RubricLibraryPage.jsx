@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { MagnifyingGlass, Plus, Trophy } from '@phosphor-icons/react';
-import { useNavigate } from 'react-router-dom';
 import RubricList from '../../../components/coordinator/rubrics/RubricList';
 import Button from '../../../components/shared/Button';
 import FormInput from '../../../components/shared/FormInput';
@@ -10,6 +9,7 @@ import SectionHeader from '../../../components/shared/SectionHeader';
 import ConfirmModal from '../../../components/shared/ConfirmModal'
 import styles from './RubricLibraryPage.module.css';
 import axiosClient from '../../../api/axiosClient';
+import { useNavigate } from 'react-router-dom';
 const MOCK_RUBRICS = [
     {
         id: 1,
@@ -67,12 +67,11 @@ const MOCK_RUBRICS = [
 ];
 
 export default function RubricLibraryPage() {
-    const navigate = useNavigate();
     const [rubrics, setRubrics] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState('date_desc');
     const [confirmModal, setConfirmModal] = useState(null);
-
+    const navigate = useNavigate();
     useState(() => {
         axiosClient.get('/scoring-template')
             .then((response) => {

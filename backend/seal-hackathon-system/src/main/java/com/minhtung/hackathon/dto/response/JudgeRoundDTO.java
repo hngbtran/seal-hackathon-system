@@ -14,8 +14,10 @@ public class JudgeRoundDTO {
     private LocalDateTime timeStart;
     private LocalDateTime timeEnd;
     private String name;
-
+    private int submissionQuantity;
+    private int scoredQuantity;
     private boolean allCategories;
+    private String lifecycle; // "upcoming", "active", "ended"
 
     private List<String> categories;
 }

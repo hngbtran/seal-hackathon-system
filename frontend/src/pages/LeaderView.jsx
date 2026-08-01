@@ -8,7 +8,8 @@ import InviteCard from '../components/leaderView/InviteCard'
 import ConfirmModal from '../components/shared/ConfirmModal'
 import styles from './LeaderView.module.css'
 import Banner from '../components/shared/Banner'
-import { Bell } from '@phosphor-icons/react'
+import axios from 'axios'
+import { Bell, WarningCircle } from '@phosphor-icons/react'
 import axiosClient from '../api/axiosClient'
 import { useAuth } from '../AuthContext'
 import ToastContainer from '../components/shared/ToastContainer'
@@ -139,6 +140,8 @@ const MOCK_CATEGORIES = [
   { id: 4, name: 'Giải trí (Entertainment)', desc: 'Game, mạng xã hội, ứng dụng đa phương tiện.', currentTeams: 12, teamLimit: 20 },
 ]
 
+const MOCK_BAN_REASON = "Đội của bạn đã vi phạm quy chế (Dữ liệu giả lập)."
+
 function LeaderView() {
   // lay du lieu tu API len 
   //gia lap login luu accesstoken vao localStorage
@@ -150,8 +153,13 @@ function LeaderView() {
   const token = localStorage.getItem("accessToken")
   const { updateTeamRole } = useAuth();
 
+  const eventId = localStorage.getItem('eventId') || null;
+
   useEffect(() => {
     localStorage.setItem('lastKnownTeamRole', 'IN_TEAM');
+    if (eventId) {
+      localStorage.setItem('lastKnownTeamRoleEventId', String(eventId));
+    }
   }, []);
 
   // ↓ Để test UI: dùng MOCK_MEMBERS. Khi dùng API thật: đổi lại thành useState([])
@@ -160,8 +168,7 @@ function LeaderView() {
   const [FAKE_INVITES, setFAKE_INVITES] = useState([]);
   const [FAKE_LEAVE_REQUESTS, setFAKE_LEAVE_REQUESTS] = useState([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const emptyCount = (teamInfo.maxSlots || 4) - FAKE_MEMBERS.length
-  const eventId= localStorage.getItem('eventId') || null;
+  const emptyCount = (teamInfo.maxSlots || 5) - FAKE_MEMBERS.length
   const triggerRefresh = () => setRefreshTrigger(prev => prev + 1);
 
   const [toasts, setToasts] = useState([])
@@ -191,6 +198,7 @@ function LeaderView() {
         setTeamInfo(response.data);
         setTeamStatus(response.data.teamStatus)
         if (response.data.category?.id) setSelectedCategory(response.data.category.id)
+        // TODO: map thêm field banReason từ API về
       })
       .catch((error) => console.log(error));
   }, [refreshTrigger]);
@@ -200,7 +208,7 @@ function LeaderView() {
     axiosClient.get(`/track?eventId=${eventId}`)
       .then(res => setCategories(res.data))
       .catch(err => console.log(err))
-  }, [])
+  }, [eventId])
 
   // TODO: Gọi API PUT /api/team/category để cập nhật/xóa hạng mục
   const handleCategoryChange = (categoryId) => {
@@ -392,6 +400,7 @@ function LeaderView() {
             addToast({ variant: 'success', title: 'Thành công', message: 'Bạn đã rời nhóm thành công!' })
             setTimeout(() => {
               localStorage.removeItem('lastKnownTeamRole');
+              localStorage.removeItem('lastKnownTeamRoleEventId');
               updateTeamRole('NO_TEAM');
             }, 1500);
             setConfirmModal(null)
@@ -543,7 +552,18 @@ function LeaderView() {
           onCategoryChange={handleCategoryChange} 
         />
 
-        {/* {renderNoticeBox()} */}
+        {/* Banner thông báo BANNED */}
+        {teamStatus === 'BANNED' && (
+          <div>
+            <Banner
+              color="orange"
+              iconSize={48}
+              icon={WarningCircle}
+              title="Đội của bạn đã bị đánh dấu vi phạm và đình chỉ tham gia."
+              message={`Lý do: ${teamInfo?.banReason || MOCK_BAN_REASON}`}
+            />
+          </div>
+        )}
 
         {/* 2 cột bên dưới */}
         <div className={styles.content}>
@@ -551,35 +571,37 @@ function LeaderView() {
           <div className={styles.main}>
             <TeamMemberPanel
               members={FAKE_MEMBERS}
-              maxSlots={teamInfo.maxSlots || 4}
+              maxSlots={teamInfo.maxSlots || 5}
               teamStatus={teamStatus}
               isLeader
               hasSelectedCategory={!!selectedCategory}
-              onLockTeam={() => handleOnLockTeam()}
-              onKick={(id) => handleOnKick(id)}
-              onPromote={(id) => handleOnPromote(id)}
-              onApproveLeave={(id) => handleOnApproveLeave(id)}
-              onCancelLeave={(id) => handleOnCancelLeave(id)}
-              onLeave={handleOnLeave}
-              onMoveToOfficial={(id) => handleMoveToOfficial(id)}
-              onMoveToReserve={(id) => handleMoveToReserve(id)}
+              onLockTeam={teamStatus === 'BANNED' ? undefined : () => handleOnLockTeam()}
+              onKick={teamStatus === 'BANNED' ? undefined : (id) => handleOnKick(id)}
+              onPromote={teamStatus === 'BANNED' ? undefined : (id) => handleOnPromote(id)}
+              onApproveLeave={teamStatus === 'BANNED' ? undefined : (id) => handleOnApproveLeave(id)}
+              onCancelLeave={teamStatus === 'BANNED' ? undefined : (id) => handleOnCancelLeave(id)}
+              onLeave={teamStatus === 'BANNED' ? undefined : handleOnLeave}
+              onMoveToOfficial={teamStatus === 'BANNED' ? undefined : (id) => handleMoveToOfficial(id)}
+              onMoveToReserve={teamStatus === 'BANNED' ? undefined : (id) => handleMoveToReserve(id)}
               leaveRequests={FAKE_LEAVE_REQUESTS}
-              onLock={handleOnLockTeam}
+              onLock={teamStatus === 'BANNED' ? undefined : handleOnLockTeam}
             />
           </div>
 
           <div className={styles.side}>
             <RequestCard
               requests={FAKE_REQUESTS}
-              onAccept={(id) => handleOnAccept(id, true)}
-              onReject={(id) => handleOnReject(id, false)}
+              disabled={teamStatus === 'BANNED'}
+              onAccept={teamStatus === 'BANNED' ? undefined : (id) => handleOnAccept(id, true)}
+              onReject={teamStatus === 'BANNED' ? undefined : (id) => handleOnReject(id, false)}
             />
-            {/* truyền vào danh sách lờiời đã gởi đi của leader
+            {/* truyền vào danh sách lời mời đã gởi đi của leader
                 cái id mà truyền vô cho onCancel là id của teamRequest để khi hủy sẽ gọi API xóa teamRequest đó đi
             */}
             <InviteCard
               invites={FAKE_INVITES}
-              onCancel={(id) => handleCancel(id)}
+              disabled={teamStatus === 'BANNED'}
+              onCancel={teamStatus === 'BANNED' ? undefined : (id) => handleCancel(id)}
             />
           </div>
 

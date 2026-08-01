@@ -86,7 +86,7 @@ function SubmissionRoundCard({ round, role }) {
             <div className={styles.evalTitle}>{round.evaluation.title}</div>
             <div className={styles.evalDesc}>{round.evaluation.content}</div>
             <div className={styles.evalAction}>
-              <Button label="Xem kết quả" variant="outline" />
+              <Button label="Xem kết quả" variant="outline" onClick={() => navigate(`/event/${localStorage.getItem('eventId')}/rounds/${round.id}/leaderboard`)} />
             </div>
           </div>
         )}
@@ -146,7 +146,7 @@ function SubmissionRoundCard({ round, role }) {
             </div>
             <div className={styles.actions}>
                 {round.submissionStatus === 'READY' && (
-                    <Button label={`Xem lại bài Vòng ${round.referenceRound}`} variant="outline" color="blue" icon={ArrowSquareOut} />
+                    <Button label={`Xem lại bài ${round.name}`} variant="outline" color="blue" icon={ArrowSquareOut} onClick={handleOpenDetail} />
                 )}
                 {round.submissionStatus === 'NO_SUBMISSION' && isLeader && (
                     <Button label="Nộp bài" variant="primary" color="blue" icon={UploadSimple} onClick={handleOpenDetail} />
@@ -162,8 +162,8 @@ function SubmissionRoundCard({ round, role }) {
                 )}
                 {round.submissionStatus === 'SUBMITTED_ON_TIME' && (
                     <>
-                        <Button label="Xem bài nộp" variant="outline" color="grey" />
-                        <Button label="Xem kết quả" variant="solid" color="green" />
+                        <Button label="Xem bài nộp" variant="outline" color="grey" onClick={handleOpenDetail} />
+                        <Button label="Xem kết quả" variant="solid" color="green" onClick={() => navigate(`/event/${localStorage.getItem('eventId')}/rounds/${round.id}/leaderboard`)} />
                     </>
                 )}
             </div>

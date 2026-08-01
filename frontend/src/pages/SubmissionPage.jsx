@@ -11,6 +11,31 @@ import styles from './SubmissionPage.module.css'
 import { useAuth } from '../AuthContext'
 import axiosClient from '../api/axiosClient'
 
+// ==========================================
+// MOCK DATA
+// ==========================================
+// const ENABLE_MOCK_ROUND = true;
+
+// const MOCK_ROUND = {
+//   id: 'mock-round-1',
+//   name: 'Vòng 0: Sàng lọc hồ sơ (Mock)',
+//   dateRange: '01/06/2026 - 15/06/2026',
+//   status: 'DONE',
+//   submissionStatus: 'SUBMITTED_ON_TIME',
+//   submissionDeadline: '15/06/2026, 23:59',
+//   daysLeft: 0,
+//   message: {
+//     type: 'success',
+//     title: 'Đã nộp bài',
+//     content: 'Đội đã nộp bài dự thi thành công cho vòng này.'
+//   },
+//   roundNumber: 0,
+//   teamTotalScore: 8.5,
+//   teamRank: { rank: 2, totalTeams: 20 },
+//   totalTeamsInRound: 20,
+//   trackName: 'Track AI'
+// };
+
 function formatDateLabel(value) {
   if (!value) return null
 
@@ -50,64 +75,62 @@ function resolveEventId(location) {
   return resolved ? String(resolved) : null
 }
 
-function mapBackendRoundToUi(round) {
+// 1. CẬP NHẬT: Nhận mảng results (danh sách kết quả của các vòng thi) từ API mới
+function mapBackendRoundToUi(round, scoreResultsList = []) {
   const now = new Date()
-  
-  const startRaw = round.roundStartTime;
-  const endRaw = round.roundEndTime;
-  const deadlineRaw = round.submissionConfig?.submissionDeadline ?? round.roundSubmissionDeadline ?? round.submissionDeadline ?? round.deadline;
-  
+  const roundId = round.roundId ?? round.id
+
+  // 1. CHUẨN HÓA DỮ LIỆU THỜI GIAN THEO ĐÚNG ENTITY BACKEND
+  const startRaw = round.timeStart ?? round.roundStartTime
+  const endRaw = round.timeEnd ?? round.roundEndTime
+  const deadlineRaw = round.submissionDeadline ?? round.submissionConfig?.submissionDeadline ?? round.deadline
+
   const start = startRaw ? new Date(startRaw) : null
   const end = endRaw ? new Date(endRaw) : null
   const deadline = deadlineRaw ? new Date(deadlineRaw) : null
 
-  // Tính trạng thái vòng thi
+  // 3. TÍNH TRẠNG THÁI VÒNG THI (Để timeline hiển thị sáng/tối đúng tiến độ)
   let status = 'UPCOMING'
-  const backendStatus = round.status?.toUpperCase() || 'UPCOMING'
-  
-  if (backendStatus === 'IN_PROGRESS' || backendStatus === 'ACTIVE' || (start && end && now >= start && now <= end)) {
+  if (start && end && now >= start && now <= end) {
     status = 'ACTIVE'
-  } else if (backendStatus === 'COMPLETED' || backendStatus === 'DONE' || (end && now > end)) {
+  } else if (end && now > end) {
     status = 'DONE'
   }
 
-  // Tính số ngày còn lại (daysLeft)
-  let daysLeft = undefined;
-  if (deadline) {
-    const diffTime = deadline.getTime() - now.getTime();
-    if (diffTime > 0) {
-      daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    } else {
-      daysLeft = 0;
-    }
-  }
+  // 2. TÌM KIẾM KẾT QUẢ PHÙ HỢP TỪ API KẾT QUẢ
+  const matchedScore = Array.isArray(scoreResultsList)
+    ? scoreResultsList.find(item => String(item.roundId) === String(roundId))
+    : null
 
-  const hasSubmission = round.submissionConfig?.hasSubmission || round.hasSubmission || false;
-  
-  // Tính trạng thái nộp bài
-  let submissionStatus = 'NOT_OPEN'
-  if (status === 'UPCOMING') {
-    submissionStatus = 'NOT_OPEN'
-  } else if (status === 'DONE') {
-    if (hasSubmission) {
-      submissionStatus = 'SUBMITTED_ON_TIME'
-    } else {
-      submissionStatus = 'CLOSED_NO_SUBMISSION'
-    }
-  } else if (status === 'ACTIVE') {
-    if (hasSubmission) {
-      submissionStatus = 'SUBMITTED_ON_TIME'
-    } else if (deadline && now > deadline) {
-      status = 'LATE'; // Đổi màu cam cho card
-      submissionStatus = 'LATE_NO_SUBMISSION'
-    } else {
+  // Ưu tiên lấy trạng thái nộp bài từ Backend, nhưng fallback theo frontend time (hỗ trợ test đổi giờ local)
+  let submissionStatus = matchedScore?.submissionStatus
+  if (!submissionStatus || submissionStatus === 'NOT_OPEN') {
+    if (status === 'ACTIVE') {
       submissionStatus = 'NO_SUBMISSION'
+    } else if (status === 'LATE') {
+      submissionStatus = 'LATE_NO_SUBMISSION'
+    } else if (status === 'DONE') {
+      submissionStatus = 'CLOSED_NO_SUBMISSION'
+    } else {
+      submissionStatus = 'NOT_OPEN'
     }
   }
 
-  // Chuẩn bị thông báo (Banner)
+  // Bổ sung logic nếu trạng thái là LATE theo thiết kế cũ
+  if (submissionStatus === 'LATE_NO_SUBMISSION' && status === 'ACTIVE') {
+    status = 'LATE'
+  }
+
+  // 4. TÍNH SỐ NGÀY CÒN LẠI (daysLeft)
+  let daysLeft = undefined
+  if (deadline) {
+    const diffTime = deadline.getTime() - now.getTime()
+    daysLeft = diffTime > 0 ? Math.ceil(diffTime / (1000 * 60 * 60 * 24)) : 0
+  }
+
+  // 5. CHUẨN BỊ THÔNG BÁO (BANNER) DỰA TRÊN TRẠNG THÁI ĐỒNG BỘ
   let message = null
-  const submissionInstructions = round.submissionConfig?.submissionInstructions ?? round.submissionGuide;
+  const submissionInstructions = round.submissionConfig?.submissionInstructions ?? round.submissionGuide
   
   if (submissionInstructions) {
     message = {
@@ -117,7 +140,8 @@ function mapBackendRoundToUi(round) {
     }
   }
 
-  if (hasSubmission) {
+  // Kiểm tra trạng thái nộp bài để ghi đè banner phù hợp
+  if (submissionStatus === 'SUBMITTED_ON_TIME' || submissionStatus === 'READY') {
     message = {
       type: 'success',
       title: 'Đã nộp bài',
@@ -131,27 +155,35 @@ function mapBackendRoundToUi(round) {
     }
   }
 
+  // 6. TRẢ VỀ ĐỐI TƯỢNG UI HOÀN CHỈNH
   return {
-    id: round.roundId ?? round.id,
-    name: round.roundName ?? round.name ?? 'Vòng thi',
+    id: roundId,
+    name: round.name ?? round.roundName ?? 'Vòng thi',
     dateRange: formatDateRange(start, end),
     status,
-    submissionStatus,
+    submissionStatus, // Dùng trực tiếp dữ liệu từ Backend gửi về
     submissionDeadline: deadline ? formatDateLabel(deadline) : null,
     daysLeft,
     message,
-    evaluation: round.scroringTemplateUrl ? {
+    evaluation: round.scoringTemplate?.templateUrl ?? round.scroringTemplateUrl ? {
       title: 'Tiêu chí chấm điểm',
-      content: round.scroringTemplateUrl,
+      content: round.scoringTemplate?.templateUrl ?? round.scroringTemplateUrl,
     } : null,
-    roundNumber: round.roundOrdinalNumber ?? round.roundNumber,
+    roundNumber: round.ordinal_number ?? round.roundOrdinalNumber ?? round.roundNumber,
     topTeamPass: round.topTeamPass,
-    submissionQuantity: round.submissionQuantity,
+    submissionQuantity: round.submissions?.length ?? round.submissionQuantity,
     roundQuantity: round.roundQuantity,
-    timelines: round.timelines ?? round.agenda ?? [],
+    timelines: round.roundTimelines ?? round.timelines ?? round.agenda ?? [],
     submissionConfig: round.submissionConfig,
+    
+    // Dữ liệu xếp hạng, điểm số từ API mới kết hợp
+    teamTotalScore: matchedScore?.teamTotalScore ?? null,
+    teamRank: matchedScore?.teamRank ?? null, // Cấu trúc dạng { rank, totalTeams }
+    totalTeamsInRound: matchedScore?.totalTeamsInRound ?? null,
+    trackName: matchedScore?.trackName ?? null,
   }
 }
+
 
 function buildProgress(rounds = []) {
   if (!Array.isArray(rounds) || rounds.length === 0) return null
@@ -161,22 +193,25 @@ function buildProgress(rounds = []) {
   const totalRounds = rounds[0]?.roundQuantity || rounds.length
   const percentage = totalRounds > 0 ? Math.round((currentIndex / totalRounds) * 100) : 0
 
+  const currentRound = rounds[activeRoundIndex >= 0 ? activeRoundIndex : 0]
+
   return {
     currentRoundIndex: currentIndex,
     totalRounds,
     percentage,
-    currentRoundName: rounds[activeRoundIndex >= 0 ? activeRoundIndex : 0]?.name || 'Chưa có vòng nào',
-    rank: '—',
-    totalTeams: '—',
-    score: '—',
+    currentRoundName: currentRound?.name || 'Chưa có vòng nào',
+    rank: currentRound?.teamRank?.rank ?? '—',
+    totalTeams: currentRound?.teamRank?.totalTeams ?? '—',
+    score: currentRound?.teamTotalScore ?? '—',
     maxScore: '—',
     groupName: '—',
+    trackName: currentRound?.trackName || '—',
   }
 }
 
 async function fetchRoundDetails(eventId) {
   const params = eventId ? { eventId } : {}
-  const candidateEndpoints = ['/round/details', '/round/team', '/round/my-team', '/round']
+  const candidateEndpoints = ['/round']
 
   let lastError = null
 
@@ -230,12 +265,26 @@ function SubmissionPage() {
           return
         }
 
-        const [roundsResult, teamInfoResult] = await Promise.allSettled([
+        // 4. THAY ĐỔI: Gọi song song 3 API bao gồm cả API lấy danh sách kết quả các rounds
+        // Thay thế đường dẫn '/team/round-results' bằng endpoint thực tế của bạn
+        const [roundsResult, teamInfoResult, scoreResult] = await Promise.allSettled([
           fetchRoundDetails(eventId),
-          axiosClient.get('/team/team-info')
+          axiosClient.get('/team/team-info'),
+          axiosClient.get('/team-results/round-results', { params: { eventId } }) 
         ])
 
         if (!isMounted) return
+
+        let scoreResultsList = []
+
+        // Nhận dữ liệu danh sách điểm/thứ hạng từ API mới
+        if (scoreResult.status === 'fulfilled') {
+          // Bạn có thể cần điều chỉnh phần gán này (ví dụ: scoreResult.value.data.results) tùy vào format trả về
+          const payload = scoreResult.value.data
+          scoreResultsList = Array.isArray(payload) 
+            ? payload 
+            : (payload?.results || payload?.data || [])
+        }
 
         if (teamInfoResult.status === 'fulfilled') {
           setTeamStatus(teamInfoResult.value.data?.teamStatus)
@@ -243,7 +292,15 @@ function SubmissionPage() {
 
         if (roundsResult.status === 'fulfilled') {
           const { rounds: backendRounds } = roundsResult.value
-          const normalizedRounds = (backendRounds || []).map(mapBackendRoundToUi)
+          
+          // 5. THAY ĐỔI: Truyền danh sách kết quả vào hàm map để xử lý khớp dữ liệu cho từng round
+           const normalizedRounds = (backendRounds || []).map((r) => mapBackendRoundToUi(r, scoreResultsList))
+          // let normalizedRounds = (backendRounds || []).map((r) => mapBackendRoundToUi(r, scoreResultsList))
+          
+          // if (ENABLE_MOCK_ROUND) {
+          //   normalizedRounds = [MOCK_ROUND, ...normalizedRounds];
+          // }
+
           setRounds(normalizedRounds)
           setProgress(buildProgress(normalizedRounds))
         } else {
@@ -281,7 +338,18 @@ function SubmissionPage() {
         {loading && <p>Đang tải dữ liệu vòng thi...</p>}
         {error && <p>{error}</p>}
 
-        {!loading && !error && teamStatus !== 'APPROVED' ? (
+        {!loading && !error && teamStatus === 'BANNED' ? (
+          <div className={`${styles.emptyState} ${styles.bannedState}`}>
+            <div className={styles.emptyIcon}>
+              <LockKey size={48} weight="fill" color="var(--color-primary-orange)" />
+            </div>
+            <h2>Đội đã bị đình chỉ</h2>
+            <p>
+              Đội của bạn đã bị đánh dấu vi phạm quy chế và đình chỉ tham gia.<br/>
+              Bạn không thể thực hiện nộp bài dự thi. Vui lòng liên hệ Ban tổ chức nếu có thắc mắc.
+            </p>
+          </div>
+        ) : !loading && !error && teamStatus !== 'APPROVED' ? (
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}>
               <LockKey size={48} weight="fill" color="var(--color-primary-blue)" />

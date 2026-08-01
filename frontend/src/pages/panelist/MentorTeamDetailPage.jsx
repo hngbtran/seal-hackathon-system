@@ -1,3 +1,6 @@
+import { useState, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import axiosClient from '../../api/axiosClient'
 import StickyHeader from '../../components/shared/StickyHeader'
 import TeamDetailHero from '../../components/panelist/event/mentorTeamDetail/TeamDetailHero'
 import TeamSupportBox from '../../components/panelist/event/mentorTeamDetail/TeamSupportBox'
@@ -5,7 +8,7 @@ import RoundTimeline from '../../components/panelist/event/mentorTeamDetail/Roun
 import TeamStatsBox from '../../components/panelist/event/mentorTeamDetail/TeamStatsBox'
 import styles from './MentorTeamDetailPage.module.css'
 
-// ── Mock tạm để xem giao diện — thay bằng data thật từ API ──
+/* // ── Mock tạm để xem giao diện — thay bằng data thật từ API ──
 const mockTeam = {
   id: 't-ledgerlink',
   name: 'LedgerLink',
@@ -134,15 +137,93 @@ const mockTeam = {
     { label: 'Chung kết', score: null },
   ],
 }
+*/
 
 /**
  * MentorTeamDetailPage — trang mentor theo dõi chi tiết một đội.
  * Full-width; gồm hero + KPI, box hỗ trợ, timeline vòng thi và side box thống kê.
- *
- * @param {object} team
  */
-function MentorTeamDetailPage({ team = mockTeam }) {
+function MentorTeamDetailPage() {
+  const { eventId, teamId } = useParams()
+  const navigate = useNavigate()
+  const [team, setTeam] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    async function fetchTeamDetail() {
+      try {
+        setLoading(true)
+        const [detailRes, resultsRes] = await Promise.all([
+          axiosClient.get(`/team/teams/${teamId}`),
+          axiosClient.get(`/team-results/events/${eventId}/teams/${teamId}/results`),
+        ])
+
+        const detail = detailRes.data
+        const roundResults = resultsRes.data
+
+        const mappedTeam = {
+          id: detail.teamId,
+          name: detail.teamName,
+          category: detail.trackName || 'Chưa phân loại',
+          members: detail.members.map((m) => ({
+            id: m.id,
+            name: m.name,
+            position: m.role,
+            isLeader: m.role === 'LEADER', // sửa theo đúng value enum MemberRole
+          })),
+          rounds: roundResults.map((r) => ({
+            id: String(r.roundId),
+            ordinal: r.ordinalNumber,
+            name: r.roundName,
+            timeStart: r.timeStart,
+            timeEnd: r.timeEnd,
+            lifecycle: r.teamTotalScore != null ? 'ended' : 'upcoming', // TODO: cần logic chuẩn hơn
+            late: r.late,
+            hasSubmission: !!r.submission,
+            result: r.teamTotalScore != null ? {
+              score: r.teamTotalScore,
+              rank: r.teamRank?.rank,
+              totalTeams: r.teamRank?.totalTeams,
+            } : null,
+            neighbors: (r.neighbors || []).map((n) => ({
+              rank: n.rank,
+              name: n.teamName,
+              score: n.score,
+              isSelf: n.isSelf,
+            })),
+            submission: r.submission ? {
+              github: { url: r.submission.githubUrl },
+              slide: { url: r.submission.documentUrl },
+              video: { url: r.submission.demoUrl },
+            } : {},
+          })),
+          requests: [], // TODO: chưa có API
+        }
+
+        setTeam(mappedTeam)
+      } catch (err) {
+        console.error(err)
+        setError('Có lỗi xảy ra khi tải dữ liệu đội.')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchTeamDetail()
+  }, [eventId, teamId])
+
+
+
+  if (loading) {
+    return <div style={{ padding: '2rem', textAlign: 'center' }}>Đang tải thông tin đội...</div>
+  }
+
+  if (error || !team) {
+    return <div style={{ padding: '2rem', textAlign: 'center', color: 'red' }}>{error || 'Không tìm thấy thông tin.'}</div>
+  }
+
   const supportTeam = { id: team.id, name: team.name }
+
   function handleReply(requestId, text) {
     // TODO: gọi API gửi phản hồi. Hiện mock chỉ log.
     console.log('reply', requestId, text)
@@ -152,7 +233,7 @@ function MentorTeamDetailPage({ team = mockTeam }) {
     <div className={styles.page}>
       <StickyHeader
         title={team.name}
-        backLink="/panelist/dashboard"
+        backLink={`/panelist/events/${eventId}?tab=mentor`}
         backTooltip="Quay lại danh sách đội"
       />
 

@@ -37,4 +37,30 @@ public interface SystemRequestRepository extends JpaRepository<SystemRequest, Lo
             @Param("referenceId") long referenceId,
             @Param("type") SystemRequest.RequestType type,
             @Param("statuses") Collection<SystemRequest.RequestStatus> statuses);
+
+
+    // Tìm request vi phạm đang chờ xử lý của bài nộp do giám khảo gửi
+    Optional<SystemRequest> findBySenderIdAndReferenceIdAndReferenceTypeAndTypeAndStatus(
+            Long senderId,
+            Long referenceId,
+            SystemRequest.ReferenceType referenceType,
+            SystemRequest.RequestType type,
+            SystemRequest.RequestStatus status
+    );
+
+    List<SystemRequest> findByTypeAndStatus(
+            SystemRequest.RequestType type,
+            SystemRequest.RequestStatus status
+    );
+
+
+    // Tìm request vi phạm có status là ACCEPTED gần nhất của Team
+    @Query("SELECT r FROM SystemRequest r, Submission s " +
+            "WHERE r.referenceId = s.id " +
+            "AND s.team.id = :teamId " +
+            "AND r.referenceType = com.minhtung.hackathon.entity.SystemRequest.ReferenceType.SUBMISSION " +
+            "AND r.type = com.minhtung.hackathon.entity.SystemRequest.RequestType.FLAG_VIOLATION " +
+            "AND r.status = com.minhtung.hackathon.entity.SystemRequest.RequestStatus.ACCEPTED " +
+            "ORDER BY r.createdAt DESC")
+    List<SystemRequest> findLatestBanRequestByTeamId(@Param("teamId") long teamId);
 }

@@ -1,8 +1,14 @@
 import { useMemo } from 'react'
-import { ListChecks, Warning } from '@phosphor-icons/react'
+import { useNavigate } from 'react-router-dom'
+import { Path, Warning } from '@phosphor-icons/react'
 import DonutChart from '../../shared/DonutChart'
 import TimelineVertical from '../../shared/TimelineVertical'
+import Button from '../../shared/Button'
 import styles from './MentorSidebar.module.css'
+
+// ==========================================
+// MOCK DATA
+const ENABLE_MOCK_MENTOR_TIMELINE = false;
 
 /**
  * MentorSidebar — cột phải sticky của tab Mentor.
@@ -18,7 +24,9 @@ function MentorSidebar({ event }) {
   // "Đang thi đấu" bao gồm cả đội "cần chú ý"; số cần chú ý tách ra note riêng.
   const { segments, attentionCount } = useMemo(() => {
     const counts = teams.reduce((acc, t) => {
-      acc[t.status] = (acc[t.status] ?? 0) + 1
+      let s = t.status || 'competing'
+      if (['approved', 'active', 'live'].includes(s)) s = 'competing'
+      acc[s] = (acc[s] ?? 0) + 1
       return acc
     }, {})
     const attention = counts.attention ?? 0
@@ -40,17 +48,39 @@ function MentorSidebar({ event }) {
   }, [teams])
 
   // ── Mốc tổng thể cho timeline (chuyển string -> Date) ──
-  const milestones = useMemo(
-    () =>
-      (mentor.milestones ?? []).map((m) => ({
+  const navigate = useNavigate();
+
+  const milestones = useMemo(() => {
+    const now = new Date();
+
+    return (mentor.milestones ?? []).map((m, index) => {
+      const _date = m.date ? new Date(m.date) : null;
+      const _endDate = m.endDate ? new Date(m.endDate) : null;
+      
+      const compareDate = _endDate || _date;
+      const isDone = (compareDate && compareDate < now) || m.status?.toLowerCase() === 'completed' || (ENABLE_MOCK_MENTOR_TIMELINE && index === 0);
+
+      return {
         id: m.id,
         title: m.title,
-        date: m.date ? new Date(m.date) : null,
+        date: _date,
         endDate: m.endDate ? new Date(m.endDate) : null,
         description: m.description,
-      })),
-    [mentor.milestones],
-  )
+        action: isDone ? (
+          <div style={{ marginTop: '0.3em' }}>
+            <Button 
+              className={styles.btnSmall}
+              label="Xem kết quả" 
+              labelSize={18}
+              variant="primary" 
+              color="green" 
+              onClick={() => navigate(`/panelist/events/${event.id}/mentor/rounds/${m.id}/leaderboard`)} 
+            />
+          </div>
+        ) : null
+      };
+    });
+  }, [mentor.milestones, event.id, navigate]);
 
   return (
     <div className={styles.stack}>
@@ -71,7 +101,7 @@ function MentorSidebar({ event }) {
       {/* Timeline mốc tổng thể */}
       <section className={styles.card}>
         <span className={styles.cardTitle}>
-          <ListChecks size={18} weight="fill" className={styles.titleIcon} />
+          <Path size={18} weight="fill" className={styles.titleIcon} />
           Mốc quan trọng
         </span>
         <div className={styles.timelineWrap}>

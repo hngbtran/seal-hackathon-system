@@ -7,6 +7,7 @@ import com.minhtung.hackathon.dto.request.UpdateJudgeScoreRequest;
 import com.minhtung.hackathon.dto.response.JudgeScoreDetailResponse;
 import com.minhtung.hackathon.dto.response.JudgeScoreResponse;
 import com.minhtung.hackathon.entity.*;
+import com.minhtung.hackathon.enums.AuditAction;
 import com.minhtung.hackathon.enums.JudgeScoreStatus;
 import com.minhtung.hackathon.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -14,10 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,15 +26,19 @@ public class JudgeScoreService {
     private final JudgeAssignmentRepository judgeAssignmentRepository;
     private final JudgeScoreRepository judgeScoreRepository;
     private final CriterionRepository criterionRepository;
-
+    private final TeamResultRepository teamResultRepository;
+    private final AuditLogService auditLogService;
     @Transactional
     public JudgeScoreResponse createScore(String email, JudgeScoreRequest request) {
+        // 1. Tìm thông tin Giám khảo từ email đăng nhập
         User judge = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy Judge"));
 
+        // 2. Tìm bài nộp cần chấm từ request
         Submission submission = submissionRepository.findById(request.getSubmissionId())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy bài nộp"));
 
+        // 3. Ràng buộc nghiệp vụ: Không cho phép chấm phiên bản cũ
         if (!submission.isLatest()) {
             throw new RuntimeException("Không thể chấm phiên bản nộp cũ");
         }
@@ -45,39 +47,45 @@ public class JudgeScoreService {
             throw new RuntimeException("Team chưa thuộc track");
         }
 
-        Long roundId=submission.getRound().getId();
-
+        Long roundId = submission.getRound().getId();
         Long trackId = submission.getTeam().getTrack().getId();
 
         System.out.println("judgeId = " + judge.getId());
         System.out.println("trackId = " + trackId);
         System.out.println("roundId = " + roundId);
 
-        JudgeAssignment assignment = judgeAssignmentRepository.findByUser_IdAndTrackIdAndRoundId(judge.getId(), trackId,roundId)
+        // 4. Kiểm tra phân công chấm thi của Giám khảo này
+        JudgeAssignment assignment = judgeAssignmentRepository.findByUser_IdAndTrackIdAndRoundId(judge.getId(), trackId, roundId)
                 .orElseThrow(() -> new RuntimeException("Bạn không được phân công để chấm"));
 
-
-
-
+        // 5. Kiểm tra xem đã tồn tại bản ghi điểm trước đó chưa
         Optional<JudgeScore> existingScoreOpt = judgeScoreRepository
                 .findByJudgeAssignmentIdAndSubmissionId(assignment.getId(), submission.getId());
 
         JudgeScore judgeScore;
 
+        // [AUDIT LOG FIX 1]: Lưu vết trạng thái và điểm cũ để phân biệt SCORE_SUBMITTED hay SCORE_EDITED
+        JudgeScoreStatus previousStatus = null;
+        Double previousScore = null;
+
         if (existingScoreOpt.isPresent()) {
             judgeScore = existingScoreOpt.get();
 
-            // Nếu trạng thái hiện tại trong DB đã là SUBMITTED thì chặn đứng
+            // [AUDIT LOG FIX 2]: Lưu giá trị cũ trước khi sửa
+            previousStatus = judgeScore.getStatus();
+            previousScore = judgeScore.getTotalScore();
+
+            // Ràng buộc nghiệp vụ: Điểm đã SUBMITTED thì không được sửa nữa
             if (judgeScore.getStatus() == JudgeScoreStatus.SUBMITTED) {
                 throw new RuntimeException("Điểm số đã được nộp chính thức trước đó, không thể thay đổi nữa.");
             }
 
             judgeScore.setUpdatedAt(LocalDateTime.now());
 
-            //   Xóa phần tử cũ thông qua .clear() nếu đã tồn tại bản nháp
+            // Xóa các chi tiết điểm (criteria score) cũ thông qua .clear() nếu đã tồn tại bản nháp
             if (judgeScore.getDetails() != null) {
                 judgeScore.getDetails().clear();
-                judgeScoreRepository.saveAndFlush(judgeScore); // Đẩy lệnh DELETE xuống DB ngay
+                judgeScoreRepository.saveAndFlush(judgeScore); // Đẩy lệnh DELETE xuống DB ngay để dọn rác chi tiết cũ
             }
         } else {
             judgeScore = new JudgeScore();
@@ -87,30 +95,130 @@ public class JudgeScoreService {
             judgeScore.setUpdatedAt(LocalDateTime.now());
         }
 
-        judgeScore.setStatus(JudgeScoreStatus.valueOf(request.getStatus()));
+        // Gán trạng thái và nhận xét từ request
+        JudgeScoreStatus newStatus = JudgeScoreStatus.valueOf(request.getStatus());
+        judgeScore.setStatus(newStatus);
         judgeScore.setComment(request.getComment());
 
-        // Sinh list các chi tiết điểm mới từ request
+        // 6. Tạo danh sách chi tiết điểm tiêu chí mới từ request.getDetails()
         List<JudgeScoreDetail> newDetails = createDetails(
                 judgeScore,
                 submission,
                 request.getDetails()
         );
 
-        //   2: THAY ĐỔI QUAN TRỌNG TẠI ĐÂY - Không dùng setDetails() bừa bãi
+        // Cập nhật danh sách chi tiết an toàn với Hibernate session
         if (judgeScore.getDetails() == null) {
             judgeScore.setDetails(newDetails);
         } else {
-            // Dùng addAll để Hibernate nhận biết được tiến trình cập nhật phần tử vào mảng cũ
             judgeScore.getDetails().addAll(newDetails);
         }
 
-        // Tính toán lại tổng điểm dựa trên danh sách chi tiết hiện tại trong thực thể
+        // Tính toán lại tổng điểm cho bảng JudgeScore dựa trên các tiêu chí vừa chấm
         judgeScore.setTotalScore(calculateTotalScore(judgeScore.getDetails()));
 
-        return mapToResponse(judgeScoreRepository.save(judgeScore));
-    }
+        // Lưu điểm của giám khảo hiện tại xuống DB
+        JudgeScore savedJudgeScore = judgeScoreRepository.save(judgeScore);
 
+        // =========================================================================
+        // [AUDIT LOG FIX 3]: GHI AUDIT LOG KHI GIÁM KHẢO NỘP ĐIỂM (SUBMITTED)
+        // =========================================================================
+        if (newStatus == JudgeScoreStatus.SUBMITTED) {
+
+            // TH 1: Nộp lần đầu (Mới hoặc từ DRAFT -> SUBMITTED)
+            if (previousStatus == null || previousStatus == JudgeScoreStatus.DRAFT) {
+                auditLogService.log(
+                        "JudgeScore",
+                        savedJudgeScore.getId(),
+                        AuditAction.SCORE_SUBMITTED,
+                        "totalScore",
+                        null,
+                        "Tổng: " + savedJudgeScore.getTotalScore(),
+                        judge
+                );
+            }
+            // TH 2: Nộp lại sau khi Admin chuyển sang FIXING (FIXING -> SUBMITTED)
+            else if (previousStatus == JudgeScoreStatus.FIXING) {
+                String oldValueStr = previousScore != null ? "Điểm cũ: " + previousScore : null;
+                String newValueStr = "Tổng: " + savedJudgeScore.getTotalScore();
+                if (request.getComment() != null && !request.getComment().isBlank()) {
+                    newValueStr += "\nLý do: " + request.getComment();
+                }
+
+                auditLogService.log(
+                        "JudgeScore",
+                        savedJudgeScore.getId(),
+                        AuditAction.SCORE_EDITED,
+                        "totalScore",
+                        oldValueStr,
+                        newValueStr,
+                        judge
+                );
+            }
+        }
+
+        // =========================================================================
+        // 7. LOGIC CẬP NHẬT HOẶC TẠO TEAM RESULT KHI NỘP ĐIỂM CHÍNH THỨC
+        // =========================================================================
+        if (newStatus == JudgeScoreStatus.SUBMITTED) {
+            // Lấy tất cả điểm của hội đồng giám khảo đã nộp chính thức (SUBMITTED) cho bài nộp hiện hành này
+            List<JudgeScore> officialScores = judgeScoreRepository
+                    .findBySubmissionIdAndStatus(submission.getId(), JudgeScoreStatus.SUBMITTED);
+
+            if (!officialScores.isEmpty()) {
+                // 1. Tính điểm trung bình cộng (Điểm tổng của các Giám khảo)
+                double averageScore = officialScores.stream()
+                        .mapToDouble(JudgeScore::getTotalScore)
+                        .average()
+                        .orElse(0.0);
+
+                // Làm tròn đến 2 chữ số thập phân
+                averageScore = Math.round(averageScore * 100.0) / 100.0;
+
+                // 2. Tìm hoặc khởi tạo mới bản ghi kết quả của Đội thi (TeamResult) tại vòng này
+                Team team = submission.getTeam();
+                Round round = submission.getRound();
+
+                TeamResult teamResult = teamResultRepository.findByTeamIdAndRoundId(team.getId(), round.getId())
+                        .orElseGet(() -> {
+                            TeamResult newResult = new TeamResult();
+                            newResult.setTeam(team);
+                            newResult.setRound(round);
+                            newResult.setCreatedAt(LocalDateTime.now());
+                            return newResult;
+                        });
+
+                // [NEW] Tính và set cờ discrepancy dựa trên toàn bộ điểm chính thức hiện có
+                teamResult.setUpdatedAt(LocalDateTime.now());
+                teamResult.setTotalScore(averageScore);
+
+
+
+                boolean hasDiscrepancy = calculateHasDiscrepancy(round, officialScores);
+                teamResult.setIsDiscrepancy(hasDiscrepancy);
+
+                // Phía Owning Side (JudgeScore): Đảm bảo JudgeScore có khóa ngoại team_result_id
+                savedJudgeScore.setTeamResult(teamResult);
+
+                // Phía Inverse Side (TeamResult): Khởi tạo danh sách nếu null và thêm bản ghi mới vào
+                if (teamResult.getJudgeScores() == null) {
+                    teamResult.setJudgeScores(new ArrayList<>());
+                }
+
+                // Tránh thêm trùng lặp nếu judgeScore đã có trong list (trường hợp update điểm nháp sang submitted)
+                if (!teamResult.getJudgeScores().contains(savedJudgeScore)) {
+                    teamResult.getJudgeScores().add(savedJudgeScore);
+                }
+
+                // 4. Lưu TeamResult xuống DB
+                teamResultRepository.save(teamResult);
+            }
+        }
+
+
+
+        return mapToResponse(savedJudgeScore);
+    }
 
     @Transactional
     public JudgeScoreResponse updateScore(String email, Long judgeScoreId, UpdateJudgeScoreRequest request) {
@@ -192,6 +300,8 @@ public class JudgeScoreService {
                                         .build()
                         )
                         .toList();
+
+
 
         return JudgeScoreResponse.builder()
                 .id(judgeScore.getId())
@@ -308,7 +418,64 @@ public class JudgeScoreService {
         return details;
     }
 
+    /**
+     * Tính xem TeamResult có bị "lệch chuẩn" hay không, dựa trên độ lệch chuẩn
+     * điểm số theo từng tiêu chí, so với ngưỡng % config ở ScoringTemplate.
+     * Chỉ cần 1 tiêu chí vượt ngưỡng -> toàn bộ TeamResult bị đánh dấu discrepancy = true.
+     */
+    private boolean calculateHasDiscrepancy(Round round, List<JudgeScore> officialScores) {
 
+        ScoringTemplate scoringTemplate = round.getScoringTemplate();
+        if (scoringTemplate == null) {
+            return false; // Không có config ngưỡng -> mặc định không lệch
+        }
+
+        double thresholdPercent = scoringTemplate.getStandardDeviation(); // vd: 15.0 nghĩa là 15%
+
+        // Gom điểm theo từng tiêu chí: criterionId -> danh sách điểm của các giám khảo
+        Map<Long, List<Double>> scoresByCriterion = new HashMap<>();
+        Map<Long, Integer> maxScoreByCriterion = new HashMap<>();
+
+        for (JudgeScore score : officialScores) {
+            if (score.getDetails() == null) continue;
+
+            for (JudgeScoreDetail detail : score.getDetails()) {
+                Criterion criterion = detail.getCriterion();
+                if (criterion == null ) continue;
+
+                Long criterionId = criterion.getId();
+                scoresByCriterion
+                        .computeIfAbsent(criterionId, k -> new ArrayList<>())
+                        .add(detail.getScore());
+
+                maxScoreByCriterion.putIfAbsent(criterionId, criterion.getMaxRange());
+            }
+        }
+
+        // Chỉ cần 1 tiêu chí vượt ngưỡng là return true ngay
+        for (Map.Entry<Long, List<Double>> entry : scoresByCriterion.entrySet()) {
+            List<Double> scores = entry.getValue();
+
+            if (scores.size() < 2) continue; // cần ít nhất 2 giám khảo mới so sánh được
+
+            double mean = scores.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+
+            double variance = scores.stream()
+                    .mapToDouble(s -> Math.pow(s - mean, 2))
+                    .sum() / scores.size();
+
+            double stdDev = Math.sqrt(variance);
+
+            double maxScore = maxScoreByCriterion.getOrDefault(entry.getKey(), 10);
+            double threshold = (thresholdPercent / 100.0) * maxScore;
+
+            if (stdDev > threshold) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
 
 

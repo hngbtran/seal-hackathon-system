@@ -1,6 +1,8 @@
 package com.minhtung.hackathon.repository;
 
+import com.minhtung.hackathon.entity.Round;
 import com.minhtung.hackathon.entity.Submission; // Thay thế bằng entity thực tế của bạn
+import com.minhtung.hackathon.entity.Track;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -49,5 +51,12 @@ ORDER BY s.submittedAt DESC
             @Param("roundId") Long roundId
     );
 
+    int countByRoundAndLatestTrue(Round round);
 
+    int countByRoundAndTeam_TrackInAndLatestTrue(Round round, List<Track> tracks);
+    List<Submission>findByTeam_IdAndLatestTrue(long teamId);
+
+    List<Submission>findByRoundIdAndLatestTrueOrderBySubmittedAtDesc(Long roundId);
+
+    Optional<Submission> findByTeam_IdAndRound_IdAndLatestTrue(long teamId, long roundId);
 }

@@ -1,9 +1,14 @@
 package com.minhtung.hackathon.controller;
 
 
+import com.minhtung.hackathon.dto.response.LeaderboardTeamDTO;
 import com.minhtung.hackathon.dto.response.TeamResultResponse;
+import com.minhtung.hackathon.dto.response.TeamRoundResultDTO;
+import com.minhtung.hackathon.dto.response.TeamRoundResultLecturerDTO;
 import com.minhtung.hackathon.enums.RankingScope;
 import com.minhtung.hackathon.repository.TeamResultRepository;
+import com.minhtung.hackathon.repository.UserRepository;
+import com.minhtung.hackathon.security.JwtUtil;
 import com.minhtung.hackathon.service.TeamResultService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +22,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TeamResultController {
     private  final TeamResultService teamResultService ;
+    private final JwtUtil jwtUtil;
+    private final UserRepository userRepository;
     @GetMapping(
             "/tracks/{trackId}/rounds/{roundId}"
     )
@@ -85,5 +92,62 @@ public class TeamResultController {
                         roundId
                 )
         );
+    }
+
+
+    @GetMapping("/round-results")
+    public ResponseEntity<?> getTeamRoundResults(
+            @RequestParam("eventId") Long eventId,
+            @RequestHeader("Authorization") String auth
+    ) {
+        // Lấy teamId của tài khoản đang đăng nhập
+        Integer uid = getUid(auth);
+        if (uid == null) {
+            return unauthorized();
+        }
+
+        List<TeamRoundResultDTO> results = teamResultService.getTeamResultsByEvent(Integer.toUnsignedLong(uid), eventId);
+        return ResponseEntity.ok(results);
+    }
+
+    //lấy thông tin result cho mentor
+    @GetMapping("/events/{eventId}/teams/{teamId}/results")
+    public List<TeamRoundResultLecturerDTO> getTeamResults(
+            @PathVariable Long eventId,
+            @PathVariable Long teamId) {
+        return teamResultService.getTeamResultsByTeamId(teamId, eventId);
+    }
+
+
+    @GetMapping("/rounds/{roundId}/results")
+    public ResponseEntity<?> getLeaderboard(
+            @PathVariable long roundId,
+            @RequestParam long eventId,
+            @RequestHeader("Authorization") String auth) { // Bạn có thể đổi thành @AuthenticationPrincipal nếu dùng Spring Security
+        Integer currentUserId = getUid(auth);
+        if (currentUserId == null) {
+            return unauthorized();
+        }
+        List<LeaderboardTeamDTO.Team> leaderboard = teamResultService.getLeaderboard(roundId, eventId, currentUserId);
+        return ResponseEntity.ok(leaderboard);
+    }
+
+
+
+    private Integer getUid(String authHeader) {
+        try {
+            String token = authHeader.substring(7);
+            String email = jwtUtil.extractEmail(token);
+            return userRepository.findByEmail(email)
+                    .map(u -> Math.toIntExact(u.getId()))
+                    .orElse(null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private ResponseEntity<String> unauthorized() {
+        return ResponseEntity.status(401).body("Token không hợp lệ");
     }
 }

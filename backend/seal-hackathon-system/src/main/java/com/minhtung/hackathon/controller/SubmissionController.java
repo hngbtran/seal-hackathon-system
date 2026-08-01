@@ -1,21 +1,25 @@
 package com.minhtung.hackathon.controller;
 
+import com.minhtung.hackathon.dto.request.FlagViolationRequest;
 import com.minhtung.hackathon.dto.request.SubmissionRequest;
-import com.minhtung.hackathon.dto.request.UpdateSubmissionRequest;
-import com.minhtung.hackathon.dto.response.SubmissionDetailResponseid;
-import com.minhtung.hackathon.dto.response.SubmissionListResponse;
-import com.minhtung.hackathon.dto.response.SubmissionResponse;
-import com.minhtung.hackathon.dto.response.ViewSubmissionTrackResponse;
+import com.minhtung.hackathon.dto.response.*;
+import com.minhtung.hackathon.entity.AuditLog;
+import com.minhtung.hackathon.enums.AuditAction;
+import com.minhtung.hackathon.repository.UserRepository;
+import com.minhtung.hackathon.security.JwtUtil;
 import com.minhtung.hackathon.service.SubmissionService;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
+
+import com.minhtung.hackathon.service.TeamService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.util.List;
 
 
@@ -23,71 +27,83 @@ import java.util.List;
 @RequestMapping("/api/submission")
 @RequiredArgsConstructor
 public class SubmissionController {
-   private final SubmissionService submissionService ;
+    private final SubmissionService submissionService ;
+    private final JwtUtil jwtUtil;
+    private final UserRepository userRepository;
+    private final TeamService teamService ;
 
 
-
-   // nộp bài
-    @PostMapping
-    @PreAuthorize("hasRole('USER')")
+    @PostMapping(value = "/submit", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<SubmissionResponse> submit(
             Authentication authentication,
-            @Valid
-            @RequestPart("request")
-            SubmissionRequest request,
 
-            @RequestPart(
-                    value = "demoFile",
-                    required = false
-            )
+            @RequestParam("roundId") Long roundId,
+            @RequestParam("githUrl") String githUrl,
+            @RequestParam(value = "demoUrl", required = false) String demoUrl,
+            @RequestParam(value = "documentUrl", required = false) String documentUrl,
+
+            @RequestPart(value = "demoFile", required = false)
             MultipartFile demoFile,
 
-            @RequestPart(
-                    value = "documentFile",
-                    required = false
-            )
+            @RequestPart(value = "documentFile", required = false)
             MultipartFile documentFile
     ) {
+        SubmissionRequest request = new SubmissionRequest();
+        request.setRoundId(roundId);
+        request.setGithUrl(githUrl);
+        request.setDemoUrl(demoUrl);
+        request.setDocumentUrl(documentUrl);
+
         SubmissionResponse response =
                 submissionService.sumbit(
                         authentication.getName(),
                         request,
-                        demoFile,demoFile
+                        demoFile,
+                        documentFile
                 );
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
     }
-
-    // update bài nộp
-    @PutMapping("/{roundId}")
-    @PreAuthorize("hasRole('USER')")
+    @PutMapping(value = "/updateSumssion/{submissionId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<SubmissionResponse> updateSubmission(
             Authentication authentication,
-            @PathVariable("roundId") Long roundId,
-            @RequestBody UpdateSubmissionRequest request
+
+            @PathVariable("submissionId") Long submissionId,
+            @RequestParam("githUrl") String githUrl,
+            @RequestParam(value = "demoUrl", required = false) String demoUrl,
+            @RequestParam(value = "documentUrl", required = false) String documentUrl,
+
+            @RequestPart(value = "demoFile", required = false)
+            MultipartFile demoFile,
+
+            @RequestPart(value = "documentFile", required = false)
+            MultipartFile documentFile
     ) {
-        System.out.println(request);
-        System.out.println(request.getGithubUrl());
-        System.out.println(request.getDemoUrl());
-        System.out.println(request.getDocumentUrl());
+        SubmissionRequest request = new SubmissionRequest();
+        request.setGithUrl(githUrl);
+        request.setDemoUrl(demoUrl);
+        request.setDocumentUrl(documentUrl);
 
         SubmissionResponse response =
                 submissionService.updateSubmission(
                         authentication.getName(),
-                        roundId,
-                        request
+                        submissionId,
+                        request,
+                        demoFile,
+                        documentFile
                 );
 
         return ResponseEntity.ok(response);
     }
 
-    // get all submission by round id
     @GetMapping
-//    @PreAuthorize("hasAnyRole('ADMIN', 'LECTURER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LECTURER')")
     public ResponseEntity<List<SubmissionListResponse>>
-    getSubmissionsByRound(Authentication authentication,
+    getSubmissionsByRound( Authentication authentication,
             @RequestParam Long roundId
     ) {
         return ResponseEntity.ok(
@@ -95,21 +111,17 @@ public class SubmissionController {
         );
     }
 
-
-    // get submission by  id
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'LECTURER')")
     public ResponseEntity<SubmissionDetailResponseid>
-    getSubmissionById(
-            Authentication authentication,@PathVariable Long id
+    getSubmissionById(Authentication authentication,
+            @PathVariable Long id
     ) {
         return ResponseEntity.ok(
-                submissionService.getSubmissionDetail(authentication.getName(),id)
+                submissionService.getSubmissionById(authentication.getName(),id)
         );
     }
 
-
-    // get all submission by track id
     @GetMapping("/track/{trackId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'LECTURER')")
     public ResponseEntity<List<ViewSubmissionTrackResponse>>
@@ -118,26 +130,72 @@ public class SubmissionController {
     ) {
         return ResponseEntity.ok(
                 submissionService.viewSubmissionTrackResponses(trackId)
+
         );
     }
 
 
     @GetMapping("/current")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<SubmissionResponse> getCurrentSubmission(
+    public ResponseEntity<SubmissionAndTeamResultResponse> getCurrentSubmission(
             Authentication authentication,
-            @RequestParam("roundId") Long roundId
+            @RequestParam Long roundId
     ) {
-        SubmissionResponse response =
-                submissionService.getCurrentSubmission(authentication.getName(), roundId);
+        SubmissionAndTeamResultResponse response = submissionService.getCurrentSubmission(authentication.getName(), roundId);
 
-        // Nếu chưa có bài nộp nào, trả về status 204 No Content để FE biết mà dùng POST
         if (response == null) {
+            // Trả về 204 No Content nếu đội chưa nộp bài, Frontend sẽ tự chuyển trạng thái về form tạo mới (POST)
             return ResponseEntity.noContent().build();
         }
 
         return ResponseEntity.ok(response);
     }
+
+    private Integer getUid(String authHeader) {
+        try {
+            String token = authHeader.substring(7);
+            String email = jwtUtil.extractEmail(token);
+            return userRepository.findByEmail(email)
+                    .map(u -> Math.toIntExact(u.getId()))
+                    .orElse(null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private ResponseEntity<String> unauthorized() {
+        return ResponseEntity.status(401).body("Token không hợp lệ");
+    }
+    // nay de lay danh sach teambyround ;
+    @GetMapping("/{roundId}/teams")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LECTURER')")
+    public ResponseEntity<List<ViewTeamListRespone>>
+    getTeamsByRound(
+            @PathVariable Long roundId
+    ) {
+        return ResponseEntity.ok(
+                teamService.viewTeamByRound(roundId)
+        );
+    }
+
+
+    @PutMapping("/{submissionId}/violation")
+    public ResponseEntity<?> toggleViolation(
+            @PathVariable Long submissionId,
+            @RequestBody FlagViolationRequest request,@RequestHeader("Authorization") String auth
+
+    ) {
+        Integer currentUserId = getUid(auth);
+        if (currentUserId == null) {
+
+            return unauthorized();
+        }
+
+
+        submissionService.handleFlagViolation(submissionId, request, Integer.toUnsignedLong(currentUserId));
+
+        return ResponseEntity.ok().build();
+    }
+
+
 }
-
-

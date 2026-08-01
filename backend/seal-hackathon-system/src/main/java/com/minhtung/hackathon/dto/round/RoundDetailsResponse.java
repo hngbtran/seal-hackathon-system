@@ -26,10 +26,14 @@ public class RoundDetailsResponse {
     private String locationName;
     private String detailLocation;
     private String status;             // Trạng thái vòng thi (UPCOMING, IN_PROGRESS, COMPLETED)
-
+    private String trackName;
     private Long rubricId;
-
+    private String submissionStatus;
     private SubmissionConfigResponse submissionConfig;
+
+    // --- THÊM MỚI ---
+    private Double teamTotalScore;       // Tổng điểm (cộng dồn) của team qua tất cả round đã công bố (null nếu user không thuộc team nào)
+    private int totalTeamsInRound;       // Tổng số đội thi trong round này (theo track của team, dùng để ghép "topTeamPass/totalTeamsInRound")
 
     // --- THÊM: Mảng lịch trình chi tiết của vòng thi này ---
     private List<TimelineResponse> timelines;
@@ -59,4 +63,5 @@ public class RoundDetailsResponse {
         private String description;
         private float weight;
     }
+
 }

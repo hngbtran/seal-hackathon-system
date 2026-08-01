@@ -3,8 +3,10 @@ package com.minhtung.hackathon.controller;
 
 import com.minhtung.hackathon.dto.request.CreateTeamDto;
 import com.minhtung.hackathon.dto.request.EdiTeamRequest;
+import com.minhtung.hackathon.dto.response.AdminTeamResponse;
 import com.minhtung.hackathon.dto.response.CreateTeamResponse;
 import com.minhtung.hackathon.dto.joinByCode;
+import com.minhtung.hackathon.dto.response.TeamDetailForMentorDTO;
 import com.minhtung.hackathon.dto.round.RoundTeamResponse;
 import com.minhtung.hackathon.repository.UserRepository;
 import com.minhtung.hackathon.security.JwtUtil;
@@ -164,15 +166,15 @@ public class TeamController {
 //
 //    }
 
-    @Operation(summary = "Admin duyệt hoặc từ chối TEAM_SUBMISSION",
-            description = "APPROVED → Team.status=APPROVED, mã mời bị vô hiệu hoá")
-    @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/submission/{requestId}/review")
-    public ResponseEntity<String> adminReview(
-            @PathVariable Integer requestId,
-            @RequestParam boolean approve) {
-        return ResponseEntity.ok(teamService.adminReviewTeam(requestId, approve));
-    }
+//    @Operation(summary = "Admin duyệt hoặc từ chối TEAM_SUBMISSION",
+//            description = "APPROVED → Team.status=APPROVED, mã mời bị vô hiệu hoá")
+//    @PreAuthorize("hasRole('ADMIN')")
+//    @PutMapping("/submission/{requestId}/review")
+//    public ResponseEntity<String> adminReview(
+//            @PathVariable Integer requestId,
+//            @RequestParam boolean approve) {
+//        return ResponseEntity.ok(teamService.adminReviewTeam(requestId, approve));
+//    }
 
 
     //thành viên trong team lấy role của mình
@@ -346,5 +348,42 @@ public class TeamController {
         }
     }
 
+
+    @GetMapping("/teams/{teamId}")
+    public TeamDetailForMentorDTO getTeamDetail(@PathVariable Long teamId) {
+        return teamService.getTeamDetail(teamId);
+    }
+
+
+    @Operation(summary = "Lấy tất cả các đội thi cho Admin duyệt")
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/admin/all-teams")
+    public ResponseEntity<List<AdminTeamResponse>> getAllTeamsForAdmin() {
+        return ResponseEntity.ok(teamService.getAllTeamForAdmin());
+    }
+
+    @Operation(summary = "Admin chấp nhận hoặc từ chối team")
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/submission/{teamId}/review")
+    public ResponseEntity<String> adminReview(
+            @PathVariable Long teamId,
+            @RequestParam String approve
+    ) {
+        return ResponseEntity.ok(
+                teamService.adminReviewTeamByLongId(teamId, approve)
+        );
+    }
+
+
+    @PutMapping("/submission/revoke-approval")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> revokeApproval(
+            @RequestParam Long teamId
+    ) {
+        return ResponseEntity.ok(
+                teamService.reveolekeApporve(teamId)
+        );
+    }
 }
+
 

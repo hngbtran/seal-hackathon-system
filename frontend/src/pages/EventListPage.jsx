@@ -22,7 +22,6 @@ const STATUS_FILTERS = [
 const SORT_OPTIONS = [
   { key: 'newest', label: 'Mới nhất', icon: <ArrowDown size={16} weight='fill' /> },
   { key: 'oldest', label: 'Cũ nhất', icon: <ArrowUp size={16} weight='fill' /> },
-  { key: 'popular', label: 'Phổ biến nhất', icon: <Heart size={16} weight='fill' /> },
 ]
 
 
@@ -171,10 +170,11 @@ function EventListPage({ onManageEvent }) {
               const dateObj = new Date(m.dateStart);
               const formattedDate = isNaN(dateObj.getTime())
                 ? 'Chưa rõ'
-                : `${String(dateObj.getDate()).padStart(2, '0')}/${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
+                : `${String(dateObj.getDate()).padStart(2, '0')}/${String(dateObj.getMonth() + 1).padStart(2, '0')}/${dateObj.getFullYear()}`;
 
               return {
                 date: formattedDate,
+                isoDate: m.dateStart,
                 label: m.milestoneName
               };
             });
@@ -182,24 +182,30 @@ function EventListPage({ onManageEvent }) {
 
 
 
-            // Tính tổng giải thưởng từ mảng prizes
-            const totalCash = (apiEvent.prizes || []).reduce((sum, p) => sum + ((p.prizeValue || 0) * (p.quantity || 1)), 0);
+            // Tính tổng giải thưởng từ apiEvent.prize hoặc từ mảng prizes
+            const totalCash = apiEvent.prize != null && !Array.isArray(apiEvent.prize)
+              ? Number(apiEvent.prize)
+              : (apiEvent.prizes || []).reduce((sum, p) => sum + ((p.prizeValue || 0) * (p.quantity || 1)), 0);
 
             // Tính tổng số đội thi từ mảng tracks (nếu teamQuantity = 0)
             const totalTeams = (apiEvent.tracks || []).reduce((sum, t) => sum + (t.currentTeams || 0), 0);
 
             return {
               id: apiEvent.eventId,
-              status: (apiEvent.eventStatus || 'draft').toLowerCase(),
+              status: ((status) => {
+                const s = (status || 'draft').toLowerCase();
+                return { 'published': 'upcoming', 'closed': 'ended' }[s] || s;
+              })(apiEvent.eventStatus),
               title: apiEvent.eventName || 'Sự kiện chưa đặt tên',
               theme: apiEvent.eventTopic || 'Chưa xác định chủ đề',
               thumbnail: apiEvent.thumbnail,
               teamSize: `Tối đa ${apiEvent.maxTeamMember || 5} người / đội`,
               venues: [apiEvent.eventLocation || 'Trực tuyến'],
               prize: totalCash > 0 ? `${totalCash.toLocaleString('vi-VN')} VNĐ` : 'Chưa cập nhật',
-              tags: apiEvent.eventTopic ? [apiEvent.eventTopic] : [],
+              tags: apiEvent.keywords || [],
               timeline: timeline,
               teamCount: apiEvent.teamQuantity || totalTeams || 0,
+              maxTeamLimit: apiEvent.maxTeam || 0,
               participantCount: apiEvent.candidateQuantity || 0,
               categoryCount: apiEvent.trackQuantity || 0,
               roundCount: apiEvent.roundQuantity || 0,
@@ -236,7 +242,7 @@ function EventListPage({ onManageEvent }) {
 
   // ── SỬA CHỖ NÀY: Đổi MOCK_EVENTS thành biến events trong useMemo lọc ──
   const filtered = useMemo(() => {
-    let list = events // Đổi từ MOCK_EVENTS sang events ở đây
+    let list = [...events] // Clone mảng để không làm đột biến state gốc khi sort
     if (activeFilter !== 'all') list = list.filter(e => e.status === activeFilter)
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
@@ -245,8 +251,16 @@ function EventListPage({ onManageEvent }) {
         e.theme.toLowerCase().includes(q)
       )
     }
+    
+    // Sort logic
+    if (activeSort === 'newest') {
+      list.sort((a, b) => b.id - a.id)
+    } else if (activeSort === 'oldest') {
+      list.sort((a, b) => a.id - b.id)
+    }
+    
     return list
-  }, [activeFilter, searchQuery, events]) // Thêm cả events vào mảng dependency này luôn
+  }, [activeFilter, searchQuery, events, activeSort])
 
 
   // ── SỬA CHỖ NÀY: Đổi MOCK_EVENTS thành events trong useMemo đếm số lượng Badge ──

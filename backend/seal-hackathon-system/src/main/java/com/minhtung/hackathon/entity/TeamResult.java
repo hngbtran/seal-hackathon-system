@@ -5,11 +5,13 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "team_result")
 @Data
-public class TeamResult {
+    public class TeamResult {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,13 +34,16 @@ public class TeamResult {
     @Enumerated(EnumType.STRING)
     private TeamResultStatus status;
 
-    /**
-     * Thứ hạng trong vòng thi
-     * Ví dụ: 1, 2, 3,...
-     */
+
+    @OneToMany(mappedBy = "teamResult", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<JudgeScore> judgeScores = new ArrayList<>();
     @Column(name = "ranking")
     private int ranking;
 
     @Column(name = "is_passed")
     private boolean isPassed;
+
+
+    @Column(name = "isDiscrepancy")
+    private Boolean isDiscrepancy ;
 }

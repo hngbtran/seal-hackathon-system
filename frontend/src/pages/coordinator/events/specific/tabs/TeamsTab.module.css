@@ -1,0 +1,38 @@
+.tabContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+}
+
+.pageTitle {
+  margin: 0;
+  font-family: var(--title-font-main);
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--color-primary-blue);
+}
+
+.pageDesc {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--color-secondary-blue);
+}
+
+.topRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.count {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+}
