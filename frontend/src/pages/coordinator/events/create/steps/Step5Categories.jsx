@@ -31,10 +31,9 @@ function CategoryCardContent({ category, onChange, errors }) {
     }
 
     const minTeamError = errors?.[`category-${category.id}-minTeam`] || (() => {
-        if (category.minTeam === '' || category.minTeam === undefined || category.minTeam === null) {
-            return 'Vui lòng nhập số đội tối thiểu'
-        }
-        if (category.minTeam && category.teamLimit && Number(category.minTeam) > Number(category.teamLimit)) {
+        if (category.minTeam !== '' && category.minTeam !== null &&
+            category.teamLimit !== '' && category.teamLimit !== null && 
+            Number(category.minTeam) > Number(category.teamLimit)) {
              return 'Số lượng tối thiểu không được lớn hơn số lượng tối đa'
         }
         return null
@@ -124,8 +123,8 @@ function CategoryCardContent({ category, onChange, errors }) {
                                 e.preventDefault()
                             }
                         }}
-                        status={(errors?.[`category-${category.id}-teamLimit`] || (!category.teamLimit ? 'error' : null)) ? 'error' : 'default'}
-                        message={errors?.[`category-${category.id}-teamLimit`] || (!category.teamLimit ? 'Vui lòng nhập giới hạn số đội' : null)}
+                        status={errors?.[`category-${category.id}-teamLimit`] ? 'error' : 'default'}
+                        message={errors?.[`category-${category.id}-teamLimit`]}
                     />
                 </div>
             </div>

@@ -269,6 +269,22 @@ function CreateEventPage() {
   }, [isEditing, dataLoaded, hasAutoValidated, formData])
 
   const [status, setStatus] = useState('draft')
+  const [hasLiveEvent, setHasLiveEvent] = useState(false)
+
+  useEffect(() => {
+    const checkLiveEvent = async () => {
+      try {
+        const response = await axiosClient.get('/event/all')
+        if (response.data) {
+          const liveFound = response.data.some(e => e.eventStatus?.toLowerCase() === 'live')
+          setHasLiveEvent(liveFound)
+        }
+      } catch (error) {
+        console.error("Failed to fetch events to check live status", error)
+      }
+    }
+    checkLiveEvent()
+  }, [])
 
   function addToast(toast) {
     const id = Date.now()
@@ -356,11 +372,14 @@ function CreateEventPage() {
         submissionGuide: r.submissionConfig?.submissionInstructions ?? r.submissionGuide ?? '',
         agenda: Array.isArray(r.agenda || r.timelines)
           ? (r.agenda || r.timelines).map((item, idx) => ({
-            id: item.id ?? `${r.roundId ?? index}-${idx}`,
+            id: item.id ?? item.timelineId ?? `${r.roundId ?? index}-${idx}`,
             name: item.name ?? item.timelineName ?? '',
             desc: item.desc ?? item.description ?? '',
             startTime: parseBackendDate(item.startTime ?? item.timeStart ?? null),
-          }))
+          })).sort((a, b) => {
+            if (!a.startTime || !b.startTime) return 0;
+            return a.startTime.getTime() - b.startTime.getTime();
+          })
           : [],
         meetingLink: r.meetingLink ?? '',
         topTeamPass: r.topTeamPass ?? 0,
@@ -950,29 +969,40 @@ function CreateEventPage() {
 
         // submission
         if (r.submissionType === 'new') {
+          totalRequired++;
+          let isSubFilled = false;
+          
           if (!r.submissionDeadline) {
             errors[`round-${idx}-submissionDeadline`] = 'Vui lòng chọn hạn nộp bài';
             isValid = false;
-          } else if (r.startDate && r.endDate) {
-            const subDeadline = new Date(r.submissionDeadline).getTime()
-            const start = new Date(r.startDate).getTime()
-            const end = new Date(r.endDate).getTime()
-            if (subDeadline <= start || subDeadline >= end) {
-              errors[`round-${idx}-submissionDeadline`] = 'Phải trong thời gian vòng thi';
-              isValid = false;
-            } else if (r.submissionOpen) {
-              const subOpen = new Date(r.submissionOpen).getTime()
-              if (subDeadline <= subOpen) {
-                errors[`round-${idx}-submissionDeadline`] = 'Phải sau khi mở nộp bài';
-                isValid = false;
-              } else if (subOpen < start) {
-                errors[`round-${idx}-submissionOpen`] = 'Phải từ lúc bắt đầu vòng thi';
-                isValid = false;
-              }
-            }
           } else {
-            errors[`round-${idx}-submissionDeadline`] = 'Vui lòng chọn thời gian bắt đầu và kết thúc vòng thi trước';
-            isValid = false;
+            isSubFilled = true; // Đã điền
+            
+            if (r.startDate && r.endDate) {
+              const subDeadline = new Date(r.submissionDeadline).getTime()
+              const start = new Date(r.startDate).getTime()
+              const end = new Date(r.endDate).getTime()
+              if (subDeadline <= start || subDeadline >= end) {
+                errors[`round-${idx}-submissionDeadline`] = 'Phải trong thời gian vòng thi';
+                isValid = false;
+              } else if (r.submissionOpen) {
+                const subOpen = new Date(r.submissionOpen).getTime()
+                if (subDeadline <= subOpen) {
+                  errors[`round-${idx}-submissionDeadline`] = 'Phải sau khi mở nộp bài';
+                  isValid = false;
+                } else if (subOpen < start) {
+                  errors[`round-${idx}-submissionOpen`] = 'Phải từ lúc bắt đầu vòng thi';
+                  isValid = false;
+                }
+              }
+            } else {
+              errors[`round-${idx}-submissionDeadline`] = 'Vui lòng chọn thời gian bắt đầu và kết thúc vòng thi trước';
+              isValid = false;
+            }
+          }
+          
+          if (isSubFilled) {
+            totalFilled++;
           }
         }
 
@@ -1203,7 +1233,14 @@ function CreateEventPage() {
       default: return null
     }
   }
-  const isPublishDisabled = ![1, 2, 3, 4, 5].every(step => validateStep(step, blurredFormData).isValid)
+  let publishDisabledReason = null;
+  if (![1, 2, 3, 4, 5, 6, 7].every(step => validateStep(step, blurredFormData).isValid)) {
+    publishDisabledReason = "Vẫn còn thông tin chưa điền hoặc bị lỗi. Vui lòng hoàn thiện tất cả các bước.";
+  } else if (hasLiveEvent) {
+    publishDisabledReason = "Hiện đang có một sự kiện đang diễn ra (Live). Không thể công bố thêm.";
+  }
+  
+  const isPublishDisabled = publishDisabledReason !== null;
   return (
     // <CoordinatorLayout>
     // </CoordinatorLayout>
@@ -1229,6 +1266,7 @@ function CreateEventPage() {
         onPublish={handlePublish}
         onPreview={handlePreview}
         isPublishDisabled={isPublishDisabled}
+        publishDisabledReason={publishDisabledReason}
       />
 
       {/* ── Body: create sidebar + step content ── */}

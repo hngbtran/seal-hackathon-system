@@ -6,7 +6,9 @@
 .tooltip {
     position: fixed;
     z-index: 9999;
-    white-space: nowrap;
+    white-space: normal;
+    max-width: 300px;
+    text-align: center;
 
     /* Mặc định là tooltip xanh dương nền solid, viền trắng */
     --tooltip-bg: var(--color-primary-blue);

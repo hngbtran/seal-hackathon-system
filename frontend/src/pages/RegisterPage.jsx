@@ -43,7 +43,7 @@ function RegisterPage() {
         if (!form.email.trim()) e.email = 'Vui lòng nhập email'
         else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Email không hợp lệ'
         if (!form.password.trim()) e.password = 'Vui lòng nhập mật khẩu'
-        else if (form.password.length < 8) e.password = 'Mật khẩu phải có ít nhất 8 ký tự'
+        else if (form.password.length < 6) e.password = 'Mật khẩu phải có ít nhất 6 ký tự'
         return e
     }
 
@@ -176,7 +176,7 @@ function RegisterPage() {
                     <FormInput
                         label="Mật khẩu"
                         required
-                        placeholder="Tối thiểu 8 kí tự"
+                        placeholder="Tối thiểu 6 kí tự"
                         type={showPassword ? 'text' : 'password'}
                         iconLeft={LockSimple}
                         iconRight={showPassword ? EyeSlash : Eye}

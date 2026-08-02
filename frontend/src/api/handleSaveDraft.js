@@ -42,7 +42,8 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
       sendData.append('description', formData.shortDesc || '');
       sendData.append('minTeamMember', formData.minMembers || 1);
       sendData.append('maxTeamMember', formData.maxMembers || 5);
-      sendData.append('status', formData.status || null);
+      const eventStatus = formData.status || formData.eventStatus || 'draft';
+      sendData.append('status', eventStatus);
 
       if (formData.openDate) sendData.append('openRegisterTime', toLocalISOString(formData.openDate));
       if (formData.closeDate) sendData.append('closeRegisterTime', toLocalISOString(formData.closeDate));
@@ -115,7 +116,7 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
       break;
     }
 
-    case 3: {
+    case 5: {
       const mappedMain = (formData.mainPrizes || []).map(item => ({
         prizeName: item.name?.trim() || '',
         description: item.desc?.trim() || '',
@@ -140,12 +141,12 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
 
       currentPromise = axiosClient.post('/prize', step3Payload)
         .then(response => {
-          console.log(`Lưu bản nháp Step 3 thành công!`, response.data);
+          console.log(`Lưu bản nháp Step 5 thành công!`, response.data);
           return true;
         })
         .catch(error => {
           const errorMsg = error.response?.data?.message || error.response?.data || error.message;
-          showAlert(`Không thể lưu bản nháp Step 3: ` + errorMsg);
+          showAlert(`Không thể lưu bản nháp Step 5: ` + errorMsg);
           return false;
         });
       break;
@@ -207,16 +208,12 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
 
           if (Array.isArray(savedRounds)) {
             const updatedRounds = (formData.rounds || []).map((original, index) => {
-              const r = savedRounds[index];
+              // Tìm đúng vòng thi trong response theo tên (hoặc fallback index) để lấy roundId
+              const r = savedRounds.find(sr => sr.roundName === original.name) || savedRounds[index];
               if (!r) return original;
               return {
                 ...original,
                 id: r.roundId,
-                name: r.roundName,
-                startDate: parseBackendDate(r.roundStartTime),
-                endDate: parseBackendDate(r.roundEndTime),
-                submissionDeadline: parseBackendDate(r.roundSubmissionDeadline),
-                topTeamPass: r.topTeamPass ?? original.topTeamPass,
               };
             });
             handleFormChange('rounds', updatedRounds);
@@ -231,7 +228,7 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
       break;
     }
 
-    case 5: {
+    case 3: {
       const step5Payload = {
         eventId: formData.id,
         tracks: (formData.categories || []).map(item => ({
@@ -244,23 +241,24 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
 
       currentPromise = axiosClient.post('/track', step5Payload)
         .then(response => {
-          console.log(`Lưu bản nháp Step 5 thành công!`, response.data);
+          console.log(`Lưu bản nháp Step 3 thành công!`, response.data);
           const savedTracks = response.data;
           if (Array.isArray(savedTracks)) {
-            const updatedCategories = savedTracks.map(t => ({
-              id: t.id,
-              name: t.name,
-              desc: t.des,
-              minTeam: t.minTeamPerTrack,
-              teamLimit: t.maxTeamPerTrack
-            }));
+            const updatedCategories = (formData.categories || []).map((original, index) => {
+              const t = savedTracks.find(st => st.name === original.name) || savedTracks[index];
+              if (!t) return original;
+              return {
+                ...original,
+                id: t.id ?? t.trackId,
+              };
+            });
             handleFormChange('categories', updatedCategories);
           }
           return true;
         })
         .catch(error => {
           const errorMsg = error.response?.data?.message || error.response?.data || error.message;
-          showAlert(`Không thể lưu bản nháp Step 5: ` + errorMsg);
+          showAlert(`Không thể lưu bản nháp Step 3: ` + errorMsg);
           return false;
         });
       break;
