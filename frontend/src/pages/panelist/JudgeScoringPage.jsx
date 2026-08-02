@@ -63,7 +63,7 @@ function JudgeScoringPage() {
         setLoading(true);
         setError(null);
 
-        let subListData, roundsList;
+        let subListData, roundsList, eventData;
 
         if (USE_MOCK_DATA) {
           await new Promise(resolve => setTimeout(resolve, 500));
@@ -86,14 +86,17 @@ function JudgeScoringPage() {
             roundName: 'Vòng chung kết',
             criteria: [{ id: 1, name: 'Sáng tạo', description: 'Độ sáng tạo', weight: 50 }, { id: 2, name: 'Kỹ thuật', description: 'Độ phức tạp', weight: 50 }]
           };
+          eventData = { openRegisterTime: '2026-06-01T00:00:00Z' };
         } else {
-          //  1. GỌI SONG SONG 2 API: Chi tiết bài nộp và Danh sách vòng thi của Sự kiện
-          const [submissionRes, eventRoundsRes] = await Promise.all([
+          //  1. GỌI SONG SONG 3 API: Chi tiết bài nộp, Danh sách vòng thi của Sự kiện, và Chi tiết sự kiện
+          const [submissionRes, eventRoundsRes, eventRes] = await Promise.all([
             axiosClient.get(`/submission/${submissionId}`),
-            axiosClient.get(`/round/rounds/${roundId}`)
+            axiosClient.get(`/round/rounds/${roundId}`),
+            axiosClient.get(`/event/${eventId}`)
           ]);
           subListData = submissionRes.data;
           roundsList = eventRoundsRes.data;
+          eventData = eventRes.data;
         }
 
         //  Xử lý lấy phần tử nếu API bài nộp trả về dạng mảng (Phòng thủ dữ liệu)
@@ -140,7 +143,9 @@ function JudgeScoringPage() {
         setSubmission({
           github: { url: subData.githubUrl || '' },
           slide: { url: subData.documentUrl || '', fileUrl: null }, // Đưa tài liệu vào khung Slide/Tài liệu
-          video: { url: subData.demoUrl || '', fileUrl: null }       // Link video / demo sản phẩm
+          video: { url: subData.demoUrl || '', fileUrl: null },      // Link video / demo sản phẩm
+          teamMemberCount: subData.members?.length || 0,
+          registrationStartDate: eventData?.openRegisterTime || eventData?.createAt || null
         });
 
         //  4. MAPPING CRITERIA (Đổ tiêu chí gốc từ cấu hình vòng thi vào bảng chấm điểm bên phải)

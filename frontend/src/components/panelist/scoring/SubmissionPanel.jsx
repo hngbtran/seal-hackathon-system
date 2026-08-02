@@ -53,7 +53,13 @@ function SubmissionPanel({ submission }) {
 
       <div className={styles.tabBody}>
         {tab === 'github' && (
-          <GithubRepoView repo={githubRepo} loading={loading} error={error} />
+          <GithubRepoView 
+            repo={githubRepo} 
+            loading={loading} 
+            error={error} 
+            teamMemberCount={submission.teamMemberCount}
+            registrationStartDate={submission.registrationStartDate}
+          />
         )}
         {tab === 'slide' && <EmbedPreview kind="slide" resource={submission.slide} />}
         {tab === 'video' && <EmbedPreview kind="video" resource={submission.video} />}
