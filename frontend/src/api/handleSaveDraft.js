@@ -49,11 +49,15 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
       }
 
       // Gửi URL ảnh hiện tại để backend giữ nguyên nếu không upload ảnh mới
-      if (formData.bannerImg) {
+      if (typeof formData.coverFile === 'string') {
+        sendData.append("bannerImg", formData.coverFile);
+      } else if (formData.bannerImg) {
         sendData.append("bannerImg", formData.bannerImg);
       }
 
-      if (formData.thumbnail_image) {
+      if (typeof formData.avatarFile === 'string') {
+        sendData.append("thumbnail_image", formData.avatarFile);
+      } else if (formData.thumbnail_image) {
         sendData.append("thumbnail_image", formData.thumbnail_image);
       }
 
@@ -155,7 +159,7 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
             ? (typeof item.location === 'object' ? [item.location?.name || item.location?.formatted_address].filter(Boolean).join(' - ') : (item.location || ''))
             : (item.meetingLink || ''),
           locationName: item.locationName || '',
-          locationDetail: typeof item.location === 'object' ? (item.location?.detail || '') : '',
+          detailLocation: typeof item.location === 'object' ? (item.location?.detail || '') : '',
           meetingLink: item.meetingLink || ''
           ,
           rubricId: item.rubricId ? Number(item.rubricId) : null,
@@ -204,6 +208,7 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
                 startDate: parseBackendDate(r.roundStartTime),
                 endDate: parseBackendDate(r.roundEndTime),
                 submissionDeadline: parseBackendDate(r.roundSubmissionDeadline),
+                topTeamPass: r.topTeamPass ?? original.topTeamPass,
               };
             });
             handleFormChange('rounds', updatedRounds);
@@ -224,7 +229,7 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
         tracks: (formData.categories || []).map(item => ({
           name: item.name?.trim() || 'Bảng đấu mới',
           des: item.desc?.trim() || '',
-          minTeamPerTrack: 1,
+          minTeamPerTrack: Number(item.minTeam) || 5,
           maxTeamPerTrack: Number(item.teamLimit) || 10
         }))
       };
@@ -238,6 +243,7 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
               id: t.id,
               name: t.name,
               desc: t.des,
+              minTeam: t.minTeamPerTrack,
               teamLimit: t.maxTeamPerTrack
             }));
             handleFormChange('categories', updatedCategories);

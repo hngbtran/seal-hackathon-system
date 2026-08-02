@@ -267,7 +267,7 @@ function RoundForm({ round, onChange, isLast, prevRound, errors, roundIndex, tea
                                 recentPlaces={recents}
                                 error={errors?.[`round-${roundIndex}-location`]}
                                 renderBelowSearch={
-                                    round.location && round.location.lat && round.location.lng ? (
+                                    round.location ? (
                                         <div style={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}>
                                             <FormInput
                                                 label="Tên địa điểm hiển thị"

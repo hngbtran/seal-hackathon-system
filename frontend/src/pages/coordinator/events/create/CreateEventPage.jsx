@@ -246,7 +246,9 @@ function CreateEventPage() {
     formData.extendedPrizes?.length,
     formData.categories?.length,
     formData.notes?.length,
-    formData.manualMilestones?.length
+    formData.manualMilestones?.length,
+    formData.avatarFile instanceof File ? formData.avatarFile.name : formData.avatarFile,
+    formData.coverFile instanceof File ? formData.coverFile.name : formData.coverFile
   ].join('-')
 
   useEffect(() => {
@@ -290,6 +292,11 @@ function CreateEventPage() {
         } else {
           next.teamDeadline = null
         }
+      }
+      
+      // Đồng bộ blurredFormData ngay lập tức với các field không có onBlur như File Upload
+      if (['avatarFile', 'coverFile', 'keywords', 'theme', 'shortDesc', 'detailDesc', 'status', 'openDate', 'closeDate', 'teamDeadline'].includes(field)) {
+        setBlurredFormData(currentBlurred => ({ ...currentBlurred, [field]: val }))
       }
       
       return next
@@ -341,7 +348,7 @@ function CreateEventPage() {
         format: r.format ?? (r.meetingLink ? 'online' : 'offline'),
         location: typeof r.location === 'object' && r.location !== null
             ? { ...r.location, detail: r.locationDetail ?? r.location.detail }
-            : (r.position ? { name: r.position, detail: r.locationDetail ?? '' } : null),
+            : (r.position || r.locationName ? { name: r.position || r.locationName, detail: r.detailLocation ?? r.locationDetail ?? '' } : null),
         locationName: r.locationName ?? r.position ?? '',
         submissionType: r.submissionType ?? (r.submissionConfig?.hasSubmission ? 'new' : 'previous'),
         submissionOpen: parseBackendDate(r.submissionConfig?.openingTime ?? r.submissionOpen ?? r.submissionOpenTime),
@@ -375,6 +382,7 @@ function CreateEventPage() {
       id: track.id ?? track.trackId ?? (index + 1),
       name: track.name ?? track.trackName ?? '',
       desc: track.des ?? track.description ?? '',
+      minTeam: track.minTeamPerTrack ?? track.minTeam ?? 5,
       teamLimit: track.maxTeamPerTrack ?? track.teamLimit ?? ''
     }))
   }
@@ -590,9 +598,22 @@ function CreateEventPage() {
           if ((!Array.isArray(data.notes) || data.notes.length === 0) && Array.isArray(fallbackNotes.notes)) data.notes = fallbackNotes.notes
         }
 
-        if (!roundsData) {
-          roundsData = await loadEventRounds(data.eventId ?? id)
+        // Merge thông tin từ API /event/{id} (có location) và API /round (có topTeamPass) do backend map thiếu
+        let apiRoundsData = await loadEventRounds(data.eventId ?? id)
+        if (roundsData && apiRoundsData) {
+            roundsData = roundsData.map((er, idx) => {
+                const ar = apiRoundsData.find(r => r.id === er.id) || apiRoundsData[idx];
+                if (!ar) return er;
+                return {
+                    ...ar, // lấy các trường từ API /round (có topTeamPass)
+                    location: er.location || ar.location, // giữ lại location từ API /event
+                    locationName: er.locationName || ar.locationName, // giữ lại locationName từ API /event
+                };
+            });
+        } else {
+            roundsData = roundsData || apiRoundsData;
         }
+
         if (!trackData) {
           trackData = await loadEventTracks(data.eventId ?? id)
         }
@@ -957,6 +978,16 @@ function CreateEventPage() {
              errors[`category-${c.id}-teamLimit`] = 'Tối thiểu 1'
              catValid = false
           }
+        }
+        if (c.minTeam !== '' && c.minTeam !== undefined && c.minTeam !== null) {
+          if (Number(c.minTeam) < 1) {
+             errors[`category-${c.id}-minTeam`] = 'Tối thiểu 1'
+             catValid = false
+          }
+        }
+        if (c.minTeam && c.teamLimit && Number(c.minTeam) > Number(c.teamLimit)) {
+             errors[`category-${c.id}-minTeam`] = 'Số lượng tối thiểu không được lớn hơn số tối đa'
+             catValid = false
         }
         if (catValid) count++;
         return catValid;
