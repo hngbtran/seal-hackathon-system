@@ -1,95 +1,198 @@
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
+import { useParams } from 'react-router-dom'
 import { NotePencil, Flag } from '@phosphor-icons/react'
 import ScoringOverviewCards from '../../../../../components/coordinator/events/ScoringOverviewCards'
 import ScoringFilterBar from '../../../../../components/coordinator/events/ScoringFilterBar'
 import ScoreTable from '../../../../../components/coordinator/events/ScoreTable'
 import ModalShell from '../../../../../components/shared/ModalShell'
 import RequestsSection from '../../../../../components/coordinator/roundResults/RequestsSection'
-import ScoreEditModal from '../../../../../components/coordinator/roundResults/ScoreEditModal'
 import ViolationHandlingModal from '../../../../../components/coordinator/roundResults/ViolationHandlingModal'
 import ScoreDistributionModal from '../../../../../components/coordinator/roundResults/ScoreDistributionModal'
-import { mockScoreEditData } from '../../../../../components/coordinator/roundResults/scoreEditMock'
-import {
-  ROUNDS, TRACKS, JUDGES, CRITERIA, ENTRIES, EVENT_OVERVIEW, DISCREPANCY_LIST
-} from './scoringMock'
-
-const mockViolationData = {
-  teamId: '',
-  teamName: 'FPT.O-H',
-  round: 'Vòng sơ loại',
-  judgeName: 'Nguyễn Văn A',
-  time: '14:30 10/07/2026',
-  reason: 'Nghi ngờ sử dụng source code được làm sẵn từ trước, không tuân thủ quy định Hackathon. Cần kiểm tra lại source code của đội này ngay lập tức để đảm bảo công bằng.'
-}
 import styles from './ScoringTab.module.css'
+import axiosClient from '../../../../../api/axiosClient'
 
-/**
- * ScoringTab — Tab Chấm điểm trong SpecificEventPage
- * Orchestrator: giữ toàn bộ filter state, điều phối ③↔④
- */
+// -- Tab Chấm điểm trong SpecificEventPage (đã kết nối API thật) --
+
 function ScoringTab() {
-  // ── Filter state (điều khiển section ③ và ④) ──
-  const [roundId, setRoundId] = useState('all')
+  const { eventId } = useParams()
+
+  // ── Filter state ──
+  const [roundId, setRoundId] = useState(null)   // null = chưa chọn (đợi fetch)
   const [trackId, setTrackId] = useState('all')
   const [judgeId, setJudgeId] = useState('all')
   const [search, setSearch] = useState('')
 
-  // ── Tương tác ③↔④ ──
-  const [selectedTeamId, setSelectedTeamId] = useState(null)
-  const [highlightJudgeId, setHighlightJudgeId] = useState(null)
+  // ── Dữ liệu từ API ──
+  const [rounds, setRounds] = useState([])
+  const [tracks, setTracks] = useState([{ id: 'all', name: 'Tất cả' }])
+  const [criteria, setCriteria] = useState([])
+  const [entries, setEntries] = useState([])     // đã map sang shape ScoreTable
+  const [judges, setJudges] = useState([])       // JudgeSummaryDTO đã map
+  const [violations, setViolations] = useState([])
+  const [pendingScoreEdits, setPendingScoreEdits] = useState(0)
+
+  const [loadingRounds, setLoadingRounds] = useState(true)
+  const [loadingResult, setLoadingResult] = useState(false)
+
+  // ── Modal state ──
   const [isScoreEditModalOpen, setIsScoreEditModalOpen] = useState(false)
   const [isViolationModalOpen, setIsViolationModalOpen] = useState(false)
+  const [directViolationTeam, setDirectViolationTeam] = useState(null)
+  const [scoreDistributionTeam, setScoreDistributionTeam] = useState(null)
+  const [selectedTeamId, setSelectedTeamId] = useState(null)
+  const [highlightJudgeId, setHighlightJudgeId] = useState(null)
 
-  const [directScoreEditTeamId, setDirectScoreEditTeamId] = useState(null)
-  const [directViolationTeamId, setDirectViolationTeamId] = useState(null)
-  const [scoreDistributionTeamId, setScoreDistributionTeamId] = useState(null)
-
-  // Ref cuộn đến khu vực xử lý requests
-  const requestsRef = useRef(null)
   const tableRef = useRef(null)
 
-  const scrollToRequests = () => {
-    tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
+  // ── Fetch danh sách vòng và track khi mount ──
+  useEffect(() => {
+    if (!eventId) return
+    const fetchMeta = async () => {
+      setLoadingRounds(true)
+      try {
+        const [roundsRes, tracksRes] = await Promise.all([
+          axiosClient.get(`/round?eventId=${eventId}`),
+          axiosClient.get(`/track?eventId=${eventId}`)
+        ])
 
-  // Khi filter vòng thay đổi → reset track
+        const mappedRounds = roundsRes.data.map((r) => ({
+          id: r.roundId,
+          name: r.roundName,
+          isCurrent: r.status === 'IN_PROGRESS',
+        }))
+        setRounds(mappedRounds)
+
+        // Lấy criteria từ vòng đầu tiên (dùng chung cho toàn bộ tab)
+        const firstRoundCriteria = roundsRes.data[0]?.criteria || []
+        setCriteria(firstRoundCriteria.map((c) => ({
+          id: String(c.id),
+          realId: String(c.id),   // dùng để map điểm từ scores["1"], scores["2"]
+          name: c.name,
+          weight: c.weight,
+        })))
+
+        // Chọn vòng đang diễn ra làm mặc định
+        const activeRound = mappedRounds.find(r => r.isCurrent) || mappedRounds[0]
+        if (activeRound) setRoundId(activeRound.id)
+
+        setTracks([
+          { id: 'all', name: 'Tất cả' },
+          ...tracksRes.data.map((t) => ({ id: String(t.id), name: t.name }))
+        ])
+      } catch (err) {
+        console.error('Lỗi fetch meta ScoringTab:', err)
+      } finally {
+        setLoadingRounds(false)
+      }
+    }
+    fetchMeta()
+  }, [eventId])
+
+  // ── Fetch kết quả chấm theo vòng + track ──
+  useEffect(() => {
+    if (!roundId) return
+    const fetchResult = async () => {
+      setLoadingResult(true)
+      try {
+        const trackParam = trackId && trackId !== 'all' ? `&trackId=${trackId}` : ''
+        const { data } = await axiosClient.get(`/round/${roundId}/results?${trackParam.slice(1)}`)
+
+        // Map entries: EntryDTO → shape ScoreTable
+        // - trackId: khi xem 'tất cả', gán sentinel '__all__' để ScoreTable có thể group được
+        // - judgeId: dùng tên làm key (API không trả về id BGK)
+        const effectiveTrackId = (trackId && trackId !== 'all') ? trackId : '__all__'
+        const mappedEntries = (data.entries || []).map((e) => ({
+          teamId: String(e.team.id),
+          teamName: e.team.name,
+          roundId: String(roundId),
+          trackId: effectiveTrackId,
+          discrepancy: e.discrepancy ? { stdDev: e.discrepancy.stdDev } : null,
+          violation: e.violation ? { reason: e.violation.reason || '' } : null,
+          perJudge: (e.perJudge || []).map((pj, idx) => ({
+            // Dùng tên BGK làm judgeId → phải đồng bộ với judges[].id bên dưới
+            judgeId: pj.judge || `judge_${idx}`,
+            judgeName: pj.judge,
+            submitted: pj.submitted,
+            total: pj.total,
+            scores: pj.scores || {},
+          })),
+        }))
+        setEntries(mappedEntries)
+
+        // Map judges: dùng tên làm id để đồng bộ với entries[].perJudge[].judgeId
+        const mappedJudges = (data.judges || []).map((j) => ({
+          id: j.name,      // Dùng tên thống nhất với perJudge.judgeId
+          name: j.name,
+          assigned: j.assigned,
+          scored: j.scored,
+        }))
+        setJudges(mappedJudges)
+
+      } catch (err) {
+        console.error('Lỗi fetch result ScoringTab:', err)
+        setEntries([])
+        setJudges([])
+      } finally {
+        setLoadingResult(false)
+      }
+    }
+    fetchResult()
+  }, [roundId, trackId])
+
+  // ── Fetch violations + score-edit requests ──
+  useEffect(() => {
+    const fetchRequests = async () => {
+      try {
+        const vioRes = await axiosClient.get('/system-requests/violations')
+        setViolations(Array.isArray(vioRes.data) ? vioRes.data : [])
+      } catch { /* bỏ qua */ }
+
+      try {
+        const editRes = await axiosClient.get('/system-requests/score-edits')
+        const editData = Array.isArray(editRes.data) ? editRes.data : []
+        setPendingScoreEdits(editData.filter(r => r.status === 'PENDING').length)
+      } catch { /* bỏ qua */ }
+    }
+    fetchRequests()
+  }, [])
+
+  // ── Khi filter vòng thay đổi → reset các filter con ──
   const handleRoundChange = (id) => {
     setRoundId(id)
     setTrackId('all')
+    setJudgeId('all')
     setSelectedTeamId(null)
   }
 
-  const handleTrackChange = (id) => {
-    setTrackId(id)
-    setSelectedTeamId(null)
-  }
-
-  // ── Lọc entries theo filter ──
+  // ── Lọc entries theo judge (phía FE, vì API không hỗ trợ) ──
   const filteredEntries = useMemo(() => {
-    let list = ENTRIES
-    // Lọc theo vòng
-    if (roundId !== 'all') list = list.filter(e => e.roundId === roundId)
-    // Lọc theo track
-    if (trackId !== 'all') list = list.filter(e => e.trackId === trackId)
-    // Lọc theo BGK (chỉ giữ đội đã được BGK đó chấm)
-    if (judgeId !== 'all') list = list.filter(e =>
+    if (judgeId === 'all') return entries
+    return entries.filter(e =>
       (e.perJudge || []).some(j => j.judgeId === judgeId && j.submitted)
     )
-    return list
-  }, [roundId, trackId, judgeId])
+  }, [entries, judgeId])
 
-  // ── Judges hiển thị (lấy từ entries đang lọc) ──
+  // ── Tính tổng quan từ data thật ──
+  const overview = useMemo(() => {
+    const totalTeams = entries.length
+    const totalScored = entries.filter(e => {
+      const js = e.perJudge || []
+      return js.length > 0 && js.every(j => j.submitted)
+    }).length
+    const totalPending = totalTeams - totalScored
+    const pendingViolations = violations.filter(v => !v.resolved).length
+    return { totalTeams, totalScored, totalPending, pendingScoreEdits, pendingViolations }
+  }, [entries, violations, pendingScoreEdits])
+
+  // ── Judges hiển thị theo filter ──
   const visibleJudges = useMemo(() => {
-    if (judgeId !== 'all') return JUDGES.filter(j => j.id === judgeId)
-    return JUDGES
-  }, [judgeId])
+    if (judgeId === 'all') return judges
+    return judges.filter(j => j.id === judgeId)
+  }, [judges, judgeId])
 
-  // ── Tracks visible (theo vòng đã lọc) ──
-  const visibleTracks = useMemo(() => {
-    if (roundId === 'all') return TRACKS
-    const trackIds = new Set(filteredEntries.map(e => e.trackId))
-    return TRACKS.filter(t => t.id === 'all' || trackIds.has(t.id))
-  }, [roundId, filteredEntries])
+  if (loadingRounds) {
+    return <div className={styles.tab}><p className={styles.pageDesc}>Đang tải dữ liệu...</p></div>
+  }
 
   return (
     <div className={styles.tab}>
@@ -101,13 +204,11 @@ function ScoringTab() {
         </p>
       </header>
 
-      {/* ① Phần đầu: Tổng quan & Audit Log */}
+      {/* ① Tổng quan tính từ data thật */}
       <div className={styles.topSection}>
         <div className={styles.overviewWrap}>
           <ScoringOverviewCards
-            overview={EVENT_OVERVIEW}
-            discrepancyList={DISCREPANCY_LIST}
-            onScrollToRequests={scrollToRequests}
+            overview={overview}
             onOpenScoreEditRequests={() => setIsScoreEditModalOpen(true)}
             onOpenViolationRequests={() => setIsViolationModalOpen(true)}
           />
@@ -116,50 +217,70 @@ function ScoringTab() {
 
       {/* ② Filter bar */}
       <ScoringFilterBar
-        rounds={ROUNDS}
-        tracks={visibleTracks}
-        judges={JUDGES}
+        rounds={rounds}
+        tracks={tracks}
+        judges={judges}
         roundId={roundId}
         trackId={trackId}
         judgeId={judgeId}
         search={search}
         onRoundChange={handleRoundChange}
-        onTrackChange={handleTrackChange}
+        onTrackChange={(id) => { setTrackId(id); setSelectedTeamId(null) }}
         onJudgeChange={setJudgeId}
         onSearch={setSearch}
       />
 
-      {/* ④ Bảng tổng hợp */}
-      <div ref={tableRef}>
-        <ScoreTable
-          entries={filteredEntries}
-          judges={visibleJudges}
-          tracks={visibleTracks}
-          criteria={CRITERIA}
-          search={search}
-          highlightJudgeId={highlightJudgeId}
-          onHighlightJudge={setHighlightJudgeId}
-          onSelectTeam={(teamId) => {
-            setSelectedTeamId(teamId)
-          }}
-          selectedTeamId={selectedTeamId}
-          onOpenScoreEditRequests={(teamId) => {
-            if (teamId) setDirectScoreEditTeamId(teamId)
-            else setIsScoreEditModalOpen(true)
-          }}
-          onOpenViolationRequests={(teamId) => {
-            if (teamId) setDirectViolationTeamId(teamId)
-            else setIsViolationModalOpen(true)
-          }}
-          onOpenScoreDistribution={(teamId) => setScoreDistributionTeamId(teamId)}
-        />
-      </div>
+      {/* Loading state */}
+      {loadingResult && (
+        <p className={styles.pageDesc} style={{ padding: '1em 0' }}>Đang tải điểm...</p>
+      )}
 
+      {/* ③ Bảng tổng hợp */}
+      {!loadingResult && (
+        <div ref={tableRef}>
+          <ScoreTable
+            entries={filteredEntries}
+            judges={visibleJudges}
+            tracks={
+              // ScoreTable groupByTrack dùng track.id để match với entry.trackId
+              // Khi 'all': entries có trackId='__all__' → cần track tương ứng
+              // Khi cụ thể: entries có trackId=trackId → dùng tracks thật (bỏ item 'all')
+              trackId === 'all'
+                ? [{ id: '__all__', name: 'Tất cả hạng mục' }]
+                : tracks.filter(t => t.id !== 'all')
+            }
+            criteria={criteria}
+            search={search}
+            highlightJudgeId={highlightJudgeId}
+            onHighlightJudge={setHighlightJudgeId}
+            onSelectTeam={setSelectedTeamId}
+            selectedTeamId={selectedTeamId}
+            onOpenScoreEditRequests={() => setIsScoreEditModalOpen(true)}
+            onOpenViolationRequests={(teamId) => {
+              if (teamId) {
+                const entry = entries.find(e => String(e.teamId) === String(teamId))
+                const v = violations.find(vio => vio.teamName === entry?.teamName)
+                if (v) setDirectViolationTeam(v)
+                else setIsViolationModalOpen(true)
+              } else {
+                setIsViolationModalOpen(true)
+              }
+            }}
+            onOpenScoreDistribution={(teamId) => {
+              const entry = entries.find(e => String(e.teamId) === String(teamId))
+              if (entry) setScoreDistributionTeam(entry)
+            }}
+          />
+        </div>
+      )}
+
+
+      {/* Modal yêu cầu chỉnh điểm */}
       {isScoreEditModalOpen && (
-        <ModalShell 
+        <ModalShell
           onClose={() => setIsScoreEditModalOpen(false)}
           size="md"
-          title={`Yêu cầu chỉnh điểm (${EVENT_OVERVIEW.pendingScoreEdits})`}
+          title={`Yêu cầu chỉnh điểm (${overview.pendingScoreEdits})`}
           subtitle="Danh sách các yêu cầu điều chỉnh lại điểm từ Ban giám khảo."
           titleColor="var(--color-primary-green)"
           subtitleColor="var(--color-text-primary)"
@@ -171,11 +292,12 @@ function ScoringTab() {
         </ModalShell>
       )}
 
+      {/* Modal vi phạm tổng hợp */}
       {isViolationModalOpen && (
-        <ModalShell 
+        <ModalShell
           onClose={() => setIsViolationModalOpen(false)}
           size="md"
-          title={`Xử lí vi phạm (${EVENT_OVERVIEW.pendingViolations})`}
+          title={`Xử lí vi phạm (${overview.pendingViolations})`}
           subtitle="Danh sách các đội thi bị báo cáo vi phạm cần Ban tổ chức xem xét."
           titleColor="var(--color-primary-orange)"
           subtitleColor="var(--color-text-primary)"
@@ -187,31 +309,27 @@ function ScoringTab() {
         </ModalShell>
       )}
 
-      {/* Direct Modals for specific team requests from ScoreTable */}
-      {directScoreEditTeamId && (
-        <ScoreEditModal
-          isOpen={true}
-          onClose={() => setDirectScoreEditTeamId(null)}
-          data={{ ...mockScoreEditData, teamId: directScoreEditTeamId, teamName: ENTRIES.find(e => e.teamId === directScoreEditTeamId)?.teamName || 'Team' }}
-        />
-      )}
-
-      {directViolationTeamId && (
+      {/* Modal xử lý vi phạm cụ thể */}
+      {directViolationTeam && (
         <ViolationHandlingModal
           isOpen={true}
-          onClose={() => setDirectViolationTeamId(null)}
-          data={{ ...mockViolationData, teamId: directViolationTeamId, teamName: ENTRIES.find(e => e.teamId === directViolationTeamId)?.teamName || 'Team' }}
+          onClose={() => setDirectViolationTeam(null)}
+          onHandled={() => setDirectViolationTeam(null)}
+          data={directViolationTeam}
+          onOpenTeam={() => {}}
+          onOpenSubmission={() => {}}
         />
       )}
 
-      {scoreDistributionTeamId && (
+      {/* Modal phân bố điểm */}
+      {scoreDistributionTeam && (
         <ScoreDistributionModal
           isOpen={true}
-          onClose={() => setScoreDistributionTeamId(null)}
+          onClose={() => setScoreDistributionTeam(null)}
           data={{
-            teamName: ENTRIES.find(e => e.teamId === scoreDistributionTeamId)?.teamName || 'Team',
-            criteria: CRITERIA,
-            judges: (ENTRIES.find(e => e.teamId === scoreDistributionTeamId)?.perJudge || []).map(pj => ({
+            teamName: scoreDistributionTeam.teamName,
+            criteria,
+            judges: (scoreDistributionTeam.perJudge || []).map(pj => ({
               id: pj.judgeId,
               name: pj.judgeName,
               scores: pj.scores || {}
