@@ -242,7 +242,7 @@ function NoTeamView() {
       <ConfirmModal
         isOpen={showKickedModal}
         title="Thông báo"
-        message="Bạn đã bị xoá (kick) khỏi nhóm."
+        message="Bạn chưa có nhóm tìm hoặc tạo đội để tiến hành thi đấu."
         confirmLabel="Đã hiểu"
         isNotification={true}
         onConfirm={handleCloseKickedModal}

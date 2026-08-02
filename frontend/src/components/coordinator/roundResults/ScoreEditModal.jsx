@@ -316,10 +316,10 @@ function ScoreEditModal({ isOpen, onClose, data, onOpenTeam, onOpenSubmission, o
                     <span className={styles.impactScoreNum}>{impact.before.teamScore.toFixed(2)}</span>
                     <span className={styles.impactScoreDesc}>Điểm đội</span>
                   </div>
-                  <div className={styles.impactDivider} />
+                  {/* <div className={styles.impactDivider} /> */}
                   <div className={styles.impactScore}>
-                    <span className={styles.impactScoreNum}>#{impact.before.teamRank}</span>
-                    <span className={styles.impactScoreDesc}>Xếp hạng</span>
+                    {/* <span className={styles.impactScoreNum}>#{impact.before.teamRank}</span>
+                    <span className={styles.impactScoreDesc}>Xếp hạng</span> */}
                   </div>
                 </div>
               </div>
@@ -343,9 +343,9 @@ function ScoreEditModal({ isOpen, onClose, data, onOpenTeam, onOpenSubmission, o
                     </span>
                     <span className={styles.impactScoreDesc}>Điểm đội</span>
                   </div>
-                  <div className={styles.impactDivider} />
+                  {/* <div className={styles.impactDivider} /> */}
                   <div className={styles.impactScore}>
-                    <span
+                    {/* <span
                       className={`${styles.impactScoreNum} ${
                         rankBetter ? styles.impactNumGreen : styles.impactNumOrange
                       }`}
@@ -354,7 +354,7 @@ function ScoreEditModal({ isOpen, onClose, data, onOpenTeam, onOpenSubmission, o
                       {rankChanged && (
                         <RankIcon size={16} weight="bold" style={{ marginLeft: '0.2em' }} />
                       )}
-                    </span>
+                    </span> */}
                     <span className={styles.impactScoreDesc}>Xếp hạng</span>
                   </div>
                 </div>
