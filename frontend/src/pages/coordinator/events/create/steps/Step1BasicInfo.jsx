@@ -57,8 +57,9 @@ function Step1BasicInfo({ formData, onFormChange, errors = {} }) {
         if (errors.closeDate) return errors.closeDate
         const open = formData.openDate
         const close = formData.closeDate
-        if (!open || !close) return null
-        if (close <= open) return 'Ngày và giờ đóng phải sau ngày và giờ mở đăng ký'
+        if (!close) return null
+        if (close <= new Date()) return 'Thời gian đóng đăng ký phải diễn ra sau thời gian hiện tại'
+        if (open && close <= open) return 'Ngày và giờ đóng phải sau ngày và giờ mở đăng ký'
         return null
     })()
 

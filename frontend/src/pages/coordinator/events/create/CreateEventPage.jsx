@@ -670,7 +670,12 @@ function CreateEventPage() {
         setDataLoaded(true)
       } catch (error) {
         console.error('Lỗi khi tải dữ liệu sự kiện:', error)
-        alert('Không tải được dữ liệu sự kiện. Vui lòng kiểm tra lại.')
+        setConfirmModal({
+            title: 'Lỗi',
+            message: 'Không tải được dữ liệu sự kiện. Vui lòng kiểm tra lại.',
+            isNotification: true,
+            confirmLabel: 'Đóng'
+        })
       }
     }
 
@@ -697,6 +702,9 @@ function CreateEventPage() {
 
       // closeDate — cả trống lẫn sai logic đều tính là invalid
       if (!data.closeDate) { errors.closeDate = 'Vui lòng chọn ngày đóng'; invalidCount++; isValid = false; }
+      else if (new Date(data.closeDate).getTime() <= new Date().getTime()) {
+        errors.closeDate = 'Thời gian đóng đăng ký phải lớn hơn thời gian hiện tại'; invalidCount++; isValid = false;
+      }
       else if (data.openDate && new Date(data.closeDate).getTime() <= new Date(data.openDate).getTime()) {
         errors.closeDate = 'Ngày đóng phải sau ngày mở'; invalidCount++; isValid = false;
       }
@@ -740,7 +748,7 @@ function CreateEventPage() {
       if (!notes.every(n => n.title?.trim())) isValid = false
       return { isValid, errors, requiredCount: 1, filledCount: isValid ? 1 : 0 }
     }
-    if (step === 3) {
+    if (step === 5) {
       const mainPrizes = data.mainPrizes ?? []
       const rankCount = data.rankCount ?? 3
       const extendedPrizes = data.extendedPrizes ?? []
@@ -789,6 +797,32 @@ function CreateEventPage() {
         return pValid;
       })
       if (!extValid) isValid = false
+
+      let totalPrizes = 0;
+      mainPrizes.forEach((p, idx) => {
+         if (idx < rankCount && p.quantity && Number(p.quantity) > 0) {
+             totalPrizes += Number(p.quantity);
+         }
+      });
+      extendedPrizes.forEach(p => {
+         if (p.quantity && Number(p.quantity) > 0) {
+             totalPrizes += Number(p.quantity);
+         }
+      });
+
+      const rounds = data.rounds || [];
+      const categories = data.categories || [];
+      if (rounds.length >= 2) {
+          const secondLastRound = rounds[rounds.length - 2];
+          if (secondLastRound.topTeamPass && Number(secondLastRound.topTeamPass) > 0) {
+              const tracks = categories.length || 1;
+              const maxPrizesAllowed = Number(secondLastRound.topTeamPass) * tracks;
+              if (totalPrizes > maxPrizesAllowed) {
+                  errors.prizesTotal = `Tổng số lượng giải thưởng (${totalPrizes}) không được vượt quá tổng số đội tham gia vòng cuối (${maxPrizesAllowed} đội).`;
+                  isValid = false;
+              }
+          }
+      }
 
       filledCount = count;
       return { isValid, errors, requiredCount, filledCount }
@@ -894,7 +928,23 @@ function CreateEventPage() {
             errors[`round-${idx}-topTeamPass`] = 'Phải lớn hơn 0';
             isValid = false;
           } else {
-            totalFilled++;
+            const categories = data.categories || [];
+            let minTeamLimit = Infinity;
+            categories.forEach(c => {
+                if (c.teamLimit !== '' && c.teamLimit !== undefined && c.teamLimit !== null) {
+                    const limit = Number(c.teamLimit);
+                    if (!isNaN(limit) && limit < minTeamLimit) {
+                        minTeamLimit = limit;
+                    }
+                }
+            });
+            
+            if (minTeamLimit !== Infinity && Number(r.topTeamPass) > minTeamLimit) {
+                errors[`round-${idx}-topTeamPass`] = `Không được lớn hơn giới hạn đội của bảng nhỏ nhất (${minTeamLimit})`;
+                isValid = false;
+            } else {
+                totalFilled++;
+            }
           }
         }
 
@@ -961,35 +1011,47 @@ function CreateEventPage() {
 
       return { isValid, errors, requiredCount: totalRequired, filledCount: totalFilled }
     }
-    if (step === 5) {
+    if (step === 3) {
       const categories = data.categories ?? []
-      requiredCount = categories.length;
+      requiredCount = categories.length * 3;
       if (categories.length === 0) return { isValid: false, errors, requiredCount: 1, filledCount: 0 }
 
       let count = 0;
       isValid = categories.every(c => {
         let catValid = true;
+        
         if (!c.name?.trim()) {
            errors[`category-${c.id}-name`] = 'Vui lòng nhập tên hạng mục'
            catValid = false
+        } else {
+           count++;
         }
-        if (c.teamLimit !== '' && c.teamLimit !== undefined && c.teamLimit !== null) {
-          if (Number(c.teamLimit) < 1) {
-             errors[`category-${c.id}-teamLimit`] = 'Tối thiểu 1'
-             catValid = false
-          }
+
+        if (c.teamLimit === '' || c.teamLimit === undefined || c.teamLimit === null) {
+          errors[`category-${c.id}-teamLimit`] = 'Vui lòng nhập giới hạn số đội'
+          catValid = false
+        } else if (Number(c.teamLimit) < 1) {
+          errors[`category-${c.id}-teamLimit`] = 'Tối thiểu 1'
+          catValid = false
+        } else {
+          count++;
         }
-        if (c.minTeam !== '' && c.minTeam !== undefined && c.minTeam !== null) {
-          if (Number(c.minTeam) < 1) {
-             errors[`category-${c.id}-minTeam`] = 'Tối thiểu 1'
-             catValid = false
-          }
+
+        if (c.minTeam === '' || c.minTeam === undefined || c.minTeam === null) {
+          errors[`category-${c.id}-minTeam`] = 'Vui lòng nhập số đội tối thiểu'
+          catValid = false
+        } else if (Number(c.minTeam) < 1) {
+          errors[`category-${c.id}-minTeam`] = 'Tối thiểu 1'
+          catValid = false
+        } else {
+          count++;
         }
+
         if (c.minTeam && c.teamLimit && Number(c.minTeam) > Number(c.teamLimit)) {
-             errors[`category-${c.id}-minTeam`] = 'Số lượng tối thiểu không được lớn hơn số tối đa'
+             errors[`category-${c.id}-minTeam`] = 'Số lượng tối thiểu không được lớn hơn số lượng tối đa'
              catValid = false
         }
-        if (catValid) count++;
+
         return catValid;
       })
       filledCount = count;
@@ -1058,7 +1120,7 @@ function CreateEventPage() {
       return;
     }
 
-    handleSaveDraft({ currentStep, formData, axiosClient, handleFormChange });
+    handleSaveDraft({ currentStep, formData, axiosClient, handleFormChange, setConfirmModal });
   }
   // ------------------------------------------------------------------
   function handleBack() { if (currentStep > 1) goToStep(currentStep - 1) }
@@ -1071,9 +1133,9 @@ function CreateEventPage() {
     const { errors, isValid, requiredCount, filledCount } = validateStep(currentStep)
     setStepErrors(errors)
 
-    const isSuccess = await handleSaveDraft({ currentStep, formData, axiosClient, handleFormChange });
+    const isSuccess = await handleSaveDraft({ currentStep, formData, axiosClient, handleFormChange, setConfirmModal });
 
-    const STEP_NAMES = ['Thông tin cơ bản', 'Thể lệ', 'Giải thưởng', 'Vòng thi', 'Bảng thi đấu', 'Lịch trình', 'Ban giám khảo']
+    const STEP_NAMES = ['Thông tin cơ bản', 'Thể lệ', 'Bảng thi đấu', 'Vòng thi', 'Giải thưởng', 'Lịch trình', 'Ban giám khảo']
     const stepName = STEP_NAMES[currentStep - 1] ?? `Trang ${currentStep}`
 
     if (isSuccess) {
@@ -1133,11 +1195,11 @@ function CreateEventPage() {
     switch (currentStep) {
       case 1: return <Step1BasicInfo formData={formData} onFormChange={handleFormChange} errors={stepErrors} />
       case 2: return <Step2Rules formData={formData} onFormChange={handleFormChange} errors={stepErrors} />
-      case 3: return <Step3Prizes formData={formData} onFormChange={handleFormChange} errors={stepErrors} />
+      case 3: return <Step5Categories formData={formData} onFormChange={handleFormChange} errors={stepErrors} />
       case 4: return <Step4Rounds formData={formData} onChange={setFormData} errors={stepErrors} clearError={(field) => setStepErrors(prev => ({...prev, [field]: undefined}))} />
-      case 5: return <Step5Categories formData={formData} onFormChange={handleFormChange} errors={stepErrors} />
+      case 5: return <Step3Prizes formData={formData} onFormChange={handleFormChange} errors={stepErrors} />
       case 6: return <Step6Timeline formData={formData} onChange={setFormData} errors={stepErrors} />
-      case 7: return <Step7MentorJudge formData={formData} onFormChange={handleFormChange} />
+      case 7: return <Step7MentorJudge formData={formData} onFormChange={handleFormChange} setConfirmModal={setConfirmModal} />
       default: return null
     }
   }
@@ -1212,6 +1274,7 @@ function CreateEventPage() {
         onNext={handleNext}
         requiredCount={validateStep(currentStep, blurredFormData).requiredCount}
         filledCount={validateStep(currentStep, blurredFormData).filledCount}
+        isValid={validateStep(currentStep, blurredFormData).isValid}
       />
 
       <ConfirmModal

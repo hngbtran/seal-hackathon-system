@@ -30,6 +30,16 @@ function CategoryCardContent({ category, onChange, errors }) {
         onChange({ ...category, [field]: value })
     }
 
+    const minTeamError = errors?.[`category-${category.id}-minTeam`] || (() => {
+        if (category.minTeam === '' || category.minTeam === undefined || category.minTeam === null) {
+            return 'Vui lòng nhập số đội tối thiểu'
+        }
+        if (category.minTeam && category.teamLimit && Number(category.minTeam) > Number(category.teamLimit)) {
+             return 'Số lượng tối thiểu không được lớn hơn số lượng tối đa'
+        }
+        return null
+    })();
+
     return (
         <>
             {/* Hàng 1: icon + tên hạng mục */}
@@ -46,7 +56,8 @@ function CategoryCardContent({ category, onChange, errors }) {
                         placeholder="Nhập tên hạng mục..."
                         value={String(category.name ?? '')}
                         onChange={val => update('name', val)}
-                        error={errors?.[`category-${category.id}-name`]}
+                        status={errors?.[`category-${category.id}-name`] ? 'error' : 'default'}
+                        message={errors?.[`category-${category.id}-name`]}
                     />
                 </div>
             </div>
@@ -65,8 +76,12 @@ function CategoryCardContent({ category, onChange, errors }) {
                 </div>
 
                 <div className={styles.fieldGroup}>
-                    <label className={styles.fieldLabel}>Số đội tối thiểu</label>
+                    <label className={styles.fieldLabel}>
+                        Số đội tối thiểu
+                        <span className={styles.required}> *</span>
+                    </label>
                     <FormInput
+                        required
                         type="number"
                         min={1}
                         className={styles.baseInput}
@@ -82,13 +97,18 @@ function CategoryCardContent({ category, onChange, errors }) {
                                 e.preventDefault()
                             }
                         }}
-                        error={errors?.[`category-${category.id}-minTeam`]}
+                        status={minTeamError ? 'error' : 'default'}
+                        message={minTeamError}
                     />
                 </div>
 
                 <div className={styles.fieldGroup}>
-                    <label className={styles.fieldLabel}>Giới hạn số đội</label>
+                    <label className={styles.fieldLabel}>
+                        Giới hạn số đội
+                        <span className={styles.required}> *</span>
+                    </label>
                     <FormInput
+                        required
                         type="number"
                         min={1}
                         className={styles.baseInput}
@@ -104,7 +124,8 @@ function CategoryCardContent({ category, onChange, errors }) {
                                 e.preventDefault()
                             }
                         }}
-                        error={errors?.[`category-${category.id}-teamLimit`]}
+                        status={(errors?.[`category-${category.id}-teamLimit`] || (!category.teamLimit ? 'error' : null)) ? 'error' : 'default'}
+                        message={errors?.[`category-${category.id}-teamLimit`] || (!category.teamLimit ? 'Vui lòng nhập giới hạn số đội' : null)}
                     />
                 </div>
             </div>

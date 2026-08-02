@@ -91,7 +91,6 @@
     overflow-y: auto;
     border: 1.5px solid var(--color-border-blue);
     border-radius: 10px;
-    overflow: hidden;
 }
 
 .loadingState,

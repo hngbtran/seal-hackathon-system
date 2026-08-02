@@ -1,5 +1,13 @@
-export function handleSaveDraft({ currentStep, formData, axiosClient, handleFormChange }) {
+export function handleSaveDraft({ currentStep, formData, axiosClient, handleFormChange, setConfirmModal }) {
   console.log(`Bắt đầu lưu nháp cho Step ${currentStep}`);
+
+  const showAlert = (msg) => {
+    if (setConfirmModal) {
+      setConfirmModal({ title: 'Thông báo', message: msg, isNotification: true, confirmLabel: 'Đóng' });
+    } else {
+      showAlert(msg);
+    }
+  };
 
   // Khởi tạo object lưu promise nếu chưa có để dùng chung cho tất cả các step
   if (!handleSaveDraft.activePromises) {
@@ -78,7 +86,7 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
           console.log(error.response?.data);
           console.log(error.response?.headers);
           const errorMsg = error.response?.data?.message || error.response?.data || error.message;
-          alert(`Không thể lưu bản nháp Step 1: ` + errorMsg);
+          showAlert(`Không thể lưu bản nháp Step 1: ` + errorMsg);
           return false;
         });
       break;
@@ -101,7 +109,7 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
         })
         .catch(error => {
           const errorMsg = error.response?.data?.message || error.response?.data || error.message;
-          alert(`Không thể lưu bản nháp Step 2: ` + errorMsg);
+          showAlert(`Không thể lưu bản nháp Step 2: ` + errorMsg);
           return false;
         });
       break;
@@ -137,7 +145,7 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
         })
         .catch(error => {
           const errorMsg = error.response?.data?.message || error.response?.data || error.message;
-          alert(`Không thể lưu bản nháp Step 3: ` + errorMsg);
+          showAlert(`Không thể lưu bản nháp Step 3: ` + errorMsg);
           return false;
         });
       break;
@@ -217,7 +225,7 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
         })
         .catch(error => {
           const errorMsg = error.response?.data?.message || error.response?.data || error.message;
-          alert('Không thể lưu bản nháp Step 4: ' + errorMsg);
+          showAlert('Không thể lưu bản nháp Step 4: ' + errorMsg);
           return false;
         });
       break;
@@ -252,7 +260,7 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
         })
         .catch(error => {
           const errorMsg = error.response?.data?.message || error.response?.data || error.message;
-          alert(`Không thể lưu bản nháp Step 5: ` + errorMsg);
+          showAlert(`Không thể lưu bản nháp Step 5: ` + errorMsg);
           return false;
         });
       break;
@@ -260,7 +268,7 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
 
     case 6: {
       if (!formData.id) {
-        alert("Không tìm thấy thông tin sự kiện gốc!");
+        showAlert("Không tìm thấy thông tin sự kiện gốc!");
         return false;
       }
 
@@ -302,7 +310,7 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
           return true;
         })
         .catch(() => {
-          alert(`Không thể lưu mốc thời gian sự kiện (Step 6)`);
+          showAlert(`Không thể lưu mốc thời gian sự kiện (Step 6)`);
           return false;
         });
       break;
@@ -311,7 +319,7 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
     case 7: {
       apiEndpoint = '/mentor-judge';
       if (!formData.id) {
-        alert("Không tìm thấy thông tin sự kiện gốc!");
+        showAlert("Không tìm thấy thông tin sự kiện gốc!");
         return false;
       }
 
@@ -334,7 +342,7 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
         })
         .catch(error => {
           const errorMsg = error.response?.data?.message || error.response?.data || error.message;
-          alert('Không thể lưu bản nháp Step 7: ' + errorMsg);
+          showAlert('Không thể lưu bản nháp Step 7: ' + errorMsg);
           return false;
         });
       break;

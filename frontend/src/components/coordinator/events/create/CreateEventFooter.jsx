@@ -12,6 +12,7 @@ function CreateEventFooter({
   onNext,
   requiredCount = 0,
   filledCount = 0,
+  isValid = true,
 }) {
   const [saveStatus, setSaveStatus] = useState('idle')
   const isFirstStep = currentStep === 1
@@ -73,9 +74,15 @@ function CreateEventFooter({
           </div>
 
           {isComplete ? (
-            <span className={styles.badgeValid}>
-              <CheckCircle size={14} weight="fill" /> Trang này đã đầy đủ
-            </span>
+            isValid ? (
+              <span className={styles.badgeValid}>
+                <CheckCircle size={14} weight="fill" /> Trang này đã đầy đủ
+              </span>
+            ) : (
+              <span className={styles.badgeWarning}>
+                <Warning size={14} weight="fill" /> Vẫn còn thông tin cần điều chỉnh
+              </span>
+            )
           ) : (
             <span className={styles.badgeWarning}>
               <Warning size={14} weight="fill" />

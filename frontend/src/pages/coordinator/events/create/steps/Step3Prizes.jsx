@@ -6,12 +6,13 @@ import {
     SortableContext, sortableKeyboardCoordinates,
     verticalListSortingStrategy, arrayMove,
 } from '@dnd-kit/sortable'
-import { Star, Plus, Trophy, Medal, Gift } from '@phosphor-icons/react'
+import { Star, Plus, Trophy, Medal, Gift, WarningCircle } from '@phosphor-icons/react'
 import SortableCard from '../../../../../components/shared/SortableCard'
 import FormInput from '../../../../../components/shared/FormInput'
 import FormTextarea from '../../../../../components/shared/FormTextarea'
 import RichTextEditor from '../../../../../components/shared/RichTextEditor'
 import FieldGroup from '../../../../../components/shared/FieldGroup'
+import Banner from '../../../../../components/shared/Banner'
 import styles from './Step3Prizes.module.css'
 
 // ── Cấu hình các loại giải ──
@@ -50,6 +51,34 @@ function Step3Prizes({ formData, onFormChange, errors = {} }) {
             desc: '',
         }
     })
+
+    const prizesTotalError = errors?.prizesTotal || (() => {
+        let total = 0;
+        mainPrizes.forEach((p, idx) => {
+            if (idx < rankCount && p.quantity && Number(p.quantity) > 0) {
+                total += Number(p.quantity);
+            }
+        });
+        extendedPrizes.forEach(p => {
+            if (p.quantity && Number(p.quantity) > 0) {
+                total += Number(p.quantity);
+            }
+        });
+
+        const rounds = formData.rounds || [];
+        const categories = formData.categories || [];
+        if (rounds.length >= 2) {
+            const secondLastRound = rounds[rounds.length - 2];
+            if (secondLastRound.topTeamPass && Number(secondLastRound.topTeamPass) > 0) {
+                const tracks = categories.length || 1;
+                const maxAllowed = Number(secondLastRound.topTeamPass) * tracks;
+                if (total > maxAllowed) {
+                    return `Tổng số lượng giải thưởng (${total}) không được vượt quá tổng số đội tham gia vòng cuối (${maxAllowed} đội).`;
+                }
+            }
+        }
+        return null;
+    })();
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -120,6 +149,18 @@ function Step3Prizes({ formData, onFormChange, errors = {} }) {
                     />
                 </FieldGroup>
             </section>
+
+            {prizesTotalError && (
+                <div style={{ marginBottom: '1.5rem' }}>
+                    <Banner
+                        color="orange"
+                        variant="solid"
+                        icon={WarningCircle}
+                        title="Vượt quá giới hạn giải thưởng"
+                        message={prizesTotalError}
+                    />
+                </div>
+            )}
 
             {/* ── Giải thưởng chính ── */}
             <section className={styles.section}>

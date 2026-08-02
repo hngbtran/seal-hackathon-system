@@ -3,9 +3,9 @@ import styles from './CreateEventSidebar.module.css'
 const STEPS = [
   { id: 1, label: 'Thông tin cơ bản' },
   { id: 2, label: 'Quy định' },
-  { id: 3, label: 'Quyền lợi & Giải thưởng' },
+  { id: 3, label: 'Hạng mục' },
   { id: 4, label: 'Vòng thi' },
-  { id: 5, label: 'Hạng mục' },
+  { id: 5, label: 'Quyền lợi & Giải thưởng' },
   { id: 6, label: 'Dòng thời gian' },
   { id: 7, label: 'Mentor & Giám khảo' },
 ]
