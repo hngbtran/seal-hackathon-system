@@ -208,24 +208,10 @@ function LeaderboardPage() {
   //   : roundInfo.roundName;
 
 
-
-  // Đồng hồ đếm ngược rà soát điểm (30 phút = 1800 giây)
-  const [remainingSec, setRemainingSec] = useState(1800);
-
-  useEffect(() => {
-    if (activeRole === 'JUDGE' && roundInfo.publishStage === 2) {
-      const interval = setInterval(() => {
-        setRemainingSec(prev => (prev > 0 ? prev - 1 : 0));
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [activeRole, roundInfo.publishStage]);
-
-  // Format giây thành MM:SS
-  const mins = Math.floor(remainingSec / 60).toString().padStart(2, '0');
-  const secs = (remainingSec % 60).toString().padStart(2, '0');
+  // Không có đồng hồ fake ở đây -- thời gian rà soát được quản lý bởi BTC bên trang kết quả
 
   // Xử lý mock data: Nếu đã sang stage 3 (Công bố chính thức) thì tất cả đều là official và hết lệch chuẩn
+
   let processedData = [];
 
 
@@ -309,25 +295,22 @@ function LeaderboardPage() {
           <p className={styles.pageDesc}>Xem xếp hạng, điểm số và kết quả của các đội thi trong vòng này.</p>
         </div>
       </header>
-
       <main>
-        {/* Banner đếm ngược rà soát điểm cho BGK */}
+        {/* Banner trạng thái rà soát điểm cho BGK -- không dùng đồng hồ fake */}
         {activeRole === 'JUDGE' && roundInfo.publishStage === 2 && (
           <div className={styles.reviewBanner}>
             <div className={styles.reviewIcon}>
               <ClockCounterClockwise size={28} weight="fill" />
             </div>
             <div className={styles.reviewContent}>
-              <h4 className={styles.reviewTitle}>Thời gian rà soát điểm</h4>
+              <h4 className={styles.reviewTitle}>Cửa sổ rà soát điểm</h4>
               <p className={styles.reviewDesc}>
-                Các giám khảo đang có 30 phút để thảo luận và yêu cầu chỉnh sửa điểm đối với những đội bị đánh dấu chênh lệch.
+                BTC đang mở cửa sổ cho giám khảo rà soát. Bạn có thể yêu cầu chỉnh sửa điểm đối với những đội có điểm chênh lệch.
               </p>
-            </div>
-            <div className={styles.timerBox}>
-              <span className={styles.timerText}>{mins}:{secs}</span>
             </div>
           </div>
         )}
+
 
         <RoleBasedLeaderboard
           data={processedData}

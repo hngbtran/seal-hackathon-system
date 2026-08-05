@@ -364,6 +364,42 @@
   fill: var(--color-secondary-blue);
 }
 
+/* ── Banner cảnh báo bất thường ── */
+.warningBanner {
+  display: flex;
+  gap: 0.75em;
+  background: var(--color-bg-orange);
+  border: 1.5px solid var(--color-border-orange);
+  border-radius: var(--radius);
+  padding: 1.1em 1.25em;
+  align-items: flex-start;
+}
+
+.warningIcon {
+  flex-shrink: 0;
+  color: var(--color-primary-orange);
+}
+
+.warningText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+  font-family: var(--body-font-main);
+  color: var(--color-text-primary);
+  font-size: 0.9rem;
+}
+
+.warningText strong {
+  color: var(--color-primary-orange);
+  font-weight: 800;
+}
+
+.warningText ul {
+  margin: 0;
+  padding-left: 1.5em;
+  list-style-type: disc;
+}
+
 @media (max-width: 40em) {
   .commitBox {
     flex-direction: column;

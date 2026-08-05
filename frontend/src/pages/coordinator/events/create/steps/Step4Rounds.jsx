@@ -49,7 +49,7 @@ const SUBMISSION_OPTIONS = [
 ]
 
 // ── Form cho 1 vòng thi
-function RoundForm({ round, onChange, isLast, prevRound, errors, roundIndex, teamDeadline, closeDate, deadlineSameAsClose, highlightRanges, clearError }) {
+function RoundForm({ round, onChange, isLast, prevRound, errors, roundIndex, teamDeadline, closeDate, deadlineSameAsClose, highlightRanges, clearError, categories }) {
     const [recents, setRecents] = useState(() => getRecentLocations())
     const [showRubricModal, setShowRubricModal] = useState(false)
 
@@ -178,6 +178,30 @@ function RoundForm({ round, onChange, isLast, prevRound, errors, roundIndex, tea
         return null
     })()
 
+    // ── Validate topTeamPass
+    const topTeamPassError = errors?.[`round-${roundIndex}-topTeamPass`] || (() => {
+        if (isLast) return null;
+        if (!round.topTeamPass) return null;
+        const val = Number(round.topTeamPass);
+        if (val <= 0) return 'Phải lớn hơn 0';
+        
+        const cats = categories || [];
+        let minTeamLimit = Infinity;
+        cats.forEach(c => {
+            if (c.teamLimit !== '' && c.teamLimit !== undefined && c.teamLimit !== null) {
+                const limit = Number(c.teamLimit);
+                if (!isNaN(limit) && limit < minTeamLimit) {
+                    minTeamLimit = limit;
+                }
+            }
+        });
+        
+        if (minTeamLimit !== Infinity && val > minTeamLimit) {
+            return `Không được lớn hơn giới hạn đội của bảng nhỏ nhất (${minTeamLimit})`;
+        }
+        return null;
+    })();
+
     return (
 
         <div className={styles.roundForm}>
@@ -236,8 +260,8 @@ function RoundForm({ round, onChange, isLast, prevRound, errors, roundIndex, tea
                                         placeholder="Ví dụ: 10"
                                         value={round.topTeamPass || ''}
                                         onChange={e => update('topTeamPass', e?.target ? e.target.value : e)}
-                                        status={errors?.[`round-${roundIndex}-topTeamPass`] ? 'error' : 'default'}
-                                        message={errors?.[`round-${roundIndex}-topTeamPass`]}
+                                        status={topTeamPassError ? 'error' : 'default'}
+                                        message={topTeamPassError}
                                     />
                                 </div>
                             </>
@@ -267,7 +291,7 @@ function RoundForm({ round, onChange, isLast, prevRound, errors, roundIndex, tea
                                 recentPlaces={recents}
                                 error={errors?.[`round-${roundIndex}-location`]}
                                 renderBelowSearch={
-                                    round.location && round.location.lat && round.location.lng ? (
+                                    round.location ? (
                                         <div style={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}>
                                             <FormInput
                                                 label="Tên địa điểm hiển thị"
@@ -514,6 +538,7 @@ function Step4Rounds({ formData, onChange, errors, clearError }) {
                     deadlineSameAsClose={formData.deadlineSameAsClose}
                     highlightRanges={highlightRanges}
                     clearError={clearError}
+                    categories={formData.categories}
                 />
             )}
         </div>

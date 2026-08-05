@@ -13,7 +13,7 @@ function fmtRange(start, end) {
 }
 
 function RoundStepper({ rounds, currentRoundId, onChange }) {
-  const segments = [{ id: 'all', name: 'Tất cả', sub: 'Tổng thể', lifecycle: 'all' }, ...rounds]
+  const segments = [...rounds]
   return (
     <div className={styles.row}>
       <div className={styles.rowLabel}>

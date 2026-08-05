@@ -30,6 +30,15 @@ function CategoryCardContent({ category, onChange, errors }) {
         onChange({ ...category, [field]: value })
     }
 
+    const minTeamError = errors?.[`category-${category.id}-minTeam`] || (() => {
+        if (category.minTeam !== '' && category.minTeam !== null &&
+            category.teamLimit !== '' && category.teamLimit !== null && 
+            Number(category.minTeam) > Number(category.teamLimit)) {
+             return 'Số lượng tối thiểu không được lớn hơn số lượng tối đa'
+        }
+        return null
+    })();
+
     return (
         <>
             {/* Hàng 1: icon + tên hạng mục */}
@@ -46,7 +55,8 @@ function CategoryCardContent({ category, onChange, errors }) {
                         placeholder="Nhập tên hạng mục..."
                         value={String(category.name ?? '')}
                         onChange={val => update('name', val)}
-                        error={errors?.[`category-${category.id}-name`]}
+                        status={errors?.[`category-${category.id}-name`] ? 'error' : 'default'}
+                        message={errors?.[`category-${category.id}-name`]}
                     />
                 </div>
             </div>
@@ -65,8 +75,39 @@ function CategoryCardContent({ category, onChange, errors }) {
                 </div>
 
                 <div className={styles.fieldGroup}>
-                    <label className={styles.fieldLabel}>Giới hạn số đội</label>
+                    <label className={styles.fieldLabel}>
+                        Số đội tối thiểu
+                        <span className={styles.required}> *</span>
+                    </label>
                     <FormInput
+                        required
+                        type="number"
+                        min={1}
+                        className={styles.baseInput}
+                        placeholder="Số đội tối thiểu tham gia"
+                        value={category.minTeam ?? ''}
+                        onChange={e => {
+                            const val = e.target.value
+                            if (val !== '' && Number(val) < 1) return
+                            update('minTeam', val === '' ? '' : Number(val))
+                        }}
+                        onKeyDown={e => {
+                            if (['-', '+', 'e', 'E', '.', ','].includes(e.key)) {
+                                e.preventDefault()
+                            }
+                        }}
+                        status={minTeamError ? 'error' : 'default'}
+                        message={minTeamError}
+                    />
+                </div>
+
+                <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>
+                        Giới hạn số đội
+                        <span className={styles.required}> *</span>
+                    </label>
+                    <FormInput
+                        required
                         type="number"
                         min={1}
                         className={styles.baseInput}
@@ -82,7 +123,8 @@ function CategoryCardContent({ category, onChange, errors }) {
                                 e.preventDefault()
                             }
                         }}
-                        error={errors?.[`category-${category.id}-teamLimit`]}
+                        status={errors?.[`category-${category.id}-teamLimit`] ? 'error' : 'default'}
+                        message={errors?.[`category-${category.id}-teamLimit`]}
                     />
                 </div>
             </div>
@@ -93,7 +135,7 @@ function CategoryCardContent({ category, onChange, errors }) {
 // ── Main component ──
 function Step5Categories({ formData, onFormChange, errors }) {
     const categories = formData.categories ?? [
-        { id: 'cat-1', name: '', desc: '', teamLimit: '' }
+        { id: 'cat-1', name: '', desc: '', minTeam: 5, teamLimit: '' }
     ]
 
 
@@ -118,7 +160,7 @@ function Step5Categories({ formData, onFormChange, errors }) {
         
         onFormChange('categories', [
             ...categories,
-            { id: nextId, name: '', desc: '', teamLimit: '' },
+            { id: nextId, name: '', desc: '', minTeam: 5, teamLimit: '' },
         ])
     }
 
@@ -133,7 +175,13 @@ function Step5Categories({ formData, onFormChange, errors }) {
     return (
         <div className={styles.wrapper}>
 
-            <h1 className={styles.title}>Hạng mục</h1>
+            <div className={styles.headerRow}>
+                <h1 className={styles.title}>Hạng mục</h1>
+                <div className={styles.totalMinTeamDisplay}>
+                    <span>Tổng số lượng tối thiểu các đội (toàn sự kiện): </span>
+                    <strong>{categories.reduce((sum, cat) => sum + (Number(cat.minTeam) || 0), 0)} đội</strong>
+                </div>
+            </div>
 
             {/* <NoticeBox
                 color="blue"

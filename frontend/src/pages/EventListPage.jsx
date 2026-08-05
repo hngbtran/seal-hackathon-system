@@ -200,9 +200,17 @@ function EventListPage({ onManageEvent }) {
               theme: apiEvent.eventTopic || 'Chưa xác định chủ đề',
               thumbnail: apiEvent.thumbnail,
               teamSize: `Tối đa ${apiEvent.maxTeamMember || 5} người / đội`,
-              venues: [apiEvent.eventLocation || 'Trực tuyến'],
+              venues: (() => {
+                if (apiEvent.eventLocations && apiEvent.eventLocations.length > 0) {
+                  const locs = Array.from(new Set(apiEvent.eventLocations.map(loc => loc.locationName || loc.detailLocation).filter(Boolean)));
+                  if (locs.length > 0) return locs;
+                }
+                return apiEvent.eventLocation ? [apiEvent.eventLocation] : ['Trực tuyến'];
+              })(),
               prize: totalCash > 0 ? `${totalCash.toLocaleString('vi-VN')} VNĐ` : 'Chưa cập nhật',
-              tags: apiEvent.keywords || [],
+              tags: Array.isArray(apiEvent.keywords) 
+                ? apiEvent.keywords 
+                : (typeof apiEvent.keywords === 'string' ? apiEvent.keywords.split(',').map(s => s.trim()) : []),
               timeline: timeline,
               teamCount: apiEvent.teamQuantity || totalTeams || 0,
               maxTeamLimit: apiEvent.maxTeam || 0,

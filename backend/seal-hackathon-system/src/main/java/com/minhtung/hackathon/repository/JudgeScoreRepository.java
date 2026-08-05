@@ -36,4 +36,8 @@ public interface JudgeScoreRepository extends JpaRepository<JudgeScore,Long> {
     // Lấy danh sách điểm số dựa trên bài nộp và trạng thái chấm (DRAFT / SUBMITTED)
     List<JudgeScore> findBySubmissionIdAndStatus(Long submissionId, JudgeScoreStatus status);
 
+
+    // Tìm bảng điểm dựa vào submissionId và ID của Giám khảo
+    Optional<JudgeScore> findBySubmissionIdAndJudgeAssignment_User_Id(long submissionId, long userId);
+
 }

@@ -23,7 +23,7 @@ function createJudge(person, roundId) {
     return { ...person, categoryIds: [], roundIds: [roundId], inviteStatus: 'pending', inviteSentAt: null }
 }
 
-function Step7MentorJudge({ formData, onFormChange }) {
+function Step7MentorJudge({ formData, onFormChange, setConfirmModal }) {
     const [mentors, setMentors] = useState(() => formData?.mentors ?? [])
     const [judges, setJudges] = useState(() => formData?.judges ?? [])
 
@@ -94,7 +94,16 @@ function Step7MentorJudge({ formData, onFormChange }) {
 
 
         if (!categoryId || categoryId === 'undefined') {
-            alert("Thao tác thất bại: Bạn chưa cấu hình Hạng mục (Category) cho Mentor này!");
+            if (setConfirmModal) {
+                setConfirmModal({
+                    title: 'Lỗi cấu hình Mentor',
+                    message: 'Thao tác thất bại: Bạn chưa cấu hình Hạng mục (Category) cho Mentor này!',
+                    isNotification: true,
+                    confirmLabel: 'Đóng'
+                });
+            } else {
+                alert("Thao tác thất bại: Bạn chưa cấu hình Hạng mục (Category) cho Mentor này!");
+            }
             return;
         }
 
@@ -201,7 +210,16 @@ function Step7MentorJudge({ formData, onFormChange }) {
         const categoryId = targetJudge?.categoryIds?.[0];
 
         if (!categoryId || categoryId === 'undefined' || !roundId || roundId === 'undefined') {
-            alert("Thao tác thất bại: Giám khảo này chưa được cấu hình đầy đủ Hạng mục HOẶC Vòng thi!");
+            if (setConfirmModal) {
+                setConfirmModal({
+                    title: 'Lỗi cấu hình Giám khảo',
+                    message: 'Thao tác thất bại: Giám khảo này chưa được cấu hình đầy đủ Hạng mục HOẶC Vòng thi!',
+                    isNotification: true,
+                    confirmLabel: 'Đóng'
+                });
+            } else {
+                alert("Thao tác thất bại: Giám khảo này chưa được cấu hình đầy đủ Hạng mục HOẶC Vòng thi!");
+            }
             return;
         }
 

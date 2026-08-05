@@ -179,6 +179,9 @@ public interface TeamResultRepository
             "LEFT JOIN TeamResult tr ON tr.team.id = t.id AND tr.round.id = :roundId " +
             "WHERE tm.member.id = :userId") // Changed tm.user.id to tm.member.id
     Optional<TeamSummaryDTO> findMyTeamResultByRound(@Param("roundId") Long roundId, @Param("userId") Long userId);
+
+
+
 }
 
 

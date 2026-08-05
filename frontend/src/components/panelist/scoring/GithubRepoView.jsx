@@ -12,6 +12,7 @@ import {
   GitBranch,
   Scales,
   Globe,
+  Warning
 } from '@phosphor-icons/react'
 import Button from '../../shared/Button'
 import Badge from '../../shared/Badge'
@@ -49,8 +50,10 @@ function fmtDate(d) {
  * @param {object}  [repo]
  * @param {boolean} [loading]
  * @param {Error}   [error]
+ * @param {number}  [teamMemberCount]
+ * @param {string}  [registrationStartDate]
  */
-function GithubRepoView({ repo, loading = false, error = null }) {
+function GithubRepoView({ repo, loading = false, error = null, teamMemberCount, registrationStartDate }) {
   if (loading) {
     return <p className={styles.empty}>Đang tải thông tin repository…</p>
   }
@@ -81,8 +84,27 @@ function GithubRepoView({ repo, loading = false, error = null }) {
     { key: 'issues', icon: Info, value: s.issues, label: 'Issues' },
   ]
 
+  const isEarlyRepo = registrationStartDate && repo.createdAt && new Date(repo.createdAt) < new Date(registrationStartDate)
+  const isTooManyContributors = teamMemberCount && s.contributors > teamMemberCount
+
   return (
     <div className={styles.wrap}>
+      {/* Banner cảnh báo bất thường */}
+      {(isEarlyRepo || isTooManyContributors) && (
+        <div className={styles.warningBanner}>
+          <div className={styles.warningIcon}>
+            <Warning size={24} weight="fill" />
+          </div>
+          <div className={styles.warningText}>
+            <strong>Cảnh báo bất thường:</strong>
+            <ul>
+              {isEarlyRepo && <li>Repository được tạo trước ngày mở đăng ký cuộc thi ({fmtDate(registrationStartDate)}).</li>}
+              {isTooManyContributors && <li>Số lượng contributors ({s.contributors}) nhiều hơn số lượng thành viên thực tế của đội ({teamMemberCount}).</li>}
+            </ul>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>

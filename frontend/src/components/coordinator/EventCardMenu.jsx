@@ -57,7 +57,8 @@ function EventCardMenu({ status, onEdit, onView, onCopyLink, onExport, onDuplica
             <button className={styles.item} onClick={() => { onEdit?.();      setOpen(false) }}>
               <PencilSimple size={24} color="var(--color-primary-blue)" /> Chỉnh sửa
             </button>
-            <button className={styles.item} onClick={() => { onView?.();      setOpen(false) }}>
+
+            {/* <button className={styles.item} onClick={() => { onView?.();      setOpen(false) }}>
               <Eye size={24} color="var(--color-primary-blue)" /> Xem trang sự kiện
             </button>
             <button className={styles.item} onClick={() => { onCopyLink?.(); setOpen(false) }}>
@@ -71,9 +72,9 @@ function EventCardMenu({ status, onEdit, onView, onCopyLink, onExport, onDuplica
             </button>
             <button className={styles.item} onClick={() => { onArchive?.();  setOpen(false) }}>
               <Archive size={24} color="var(--color-primary-blue)" /> Lưu trữ
-            </button>
+            </button> */}
 
-            {/* Hủy — chỉ hiển với live / upcoming */}
+            {/* Hủy — chỉ hiển với live / upcoming
             {(destructive?.type === 'cancel') && (
               <button
                 className={`${styles.item} ${styles.itemCancel}`}
@@ -83,9 +84,10 @@ function EventCardMenu({ status, onEdit, onView, onCopyLink, onExport, onDuplica
                 <XCircle size={24} color="#f97316" /> Hủy
               </button>
             )}
+            */}
           </div>
 
-          {/* === Xóa — chỉ hiển với draft, riêng box === */}
+          {/* === Xóa — chỉ hiển với draft, riêng box ===
           {destructive?.type === 'delete' && (
             <div className={styles.destructiveBox}>
               <button
@@ -96,6 +98,7 @@ function EventCardMenu({ status, onEdit, onView, onCopyLink, onExport, onDuplica
               </button>
             </div>
           )}
+          */}
         </div>
       )}
     </div>

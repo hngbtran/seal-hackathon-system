@@ -1,5 +1,13 @@
-export function handleSaveDraft({ currentStep, formData, axiosClient, handleFormChange }) {
+export function handleSaveDraft({ currentStep, formData, axiosClient, handleFormChange, setConfirmModal }) {
   console.log(`Bắt đầu lưu nháp cho Step ${currentStep}`);
+
+  const showAlert = (msg) => {
+    if (setConfirmModal) {
+      setConfirmModal({ title: 'Thông báo', message: msg, isNotification: true, confirmLabel: 'Đóng' });
+    } else {
+      showAlert(msg);
+    }
+  };
 
   // Khởi tạo object lưu promise nếu chưa có để dùng chung cho tất cả các step
   if (!handleSaveDraft.activePromises) {
@@ -34,7 +42,8 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
       sendData.append('description', formData.shortDesc || '');
       sendData.append('minTeamMember', formData.minMembers || 1);
       sendData.append('maxTeamMember', formData.maxMembers || 5);
-      sendData.append('status', formData.status || null);
+      const eventStatus = formData.status || formData.eventStatus || 'draft';
+      sendData.append('status', eventStatus);
 
       if (formData.openDate) sendData.append('openRegisterTime', toLocalISOString(formData.openDate));
       if (formData.closeDate) sendData.append('closeRegisterTime', toLocalISOString(formData.closeDate));
@@ -49,11 +58,15 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
       }
 
       // Gửi URL ảnh hiện tại để backend giữ nguyên nếu không upload ảnh mới
-      if (formData.bannerImg) {
+      if (typeof formData.coverFile === 'string') {
+        sendData.append("bannerImg", formData.coverFile);
+      } else if (formData.bannerImg) {
         sendData.append("bannerImg", formData.bannerImg);
       }
 
-      if (formData.thumbnail_image) {
+      if (typeof formData.avatarFile === 'string') {
+        sendData.append("thumbnail_image", formData.avatarFile);
+      } else if (formData.thumbnail_image) {
         sendData.append("thumbnail_image", formData.thumbnail_image);
       }
 
@@ -74,7 +87,7 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
           console.log(error.response?.data);
           console.log(error.response?.headers);
           const errorMsg = error.response?.data?.message || error.response?.data || error.message;
-          alert(`Không thể lưu bản nháp Step 1: ` + errorMsg);
+          showAlert(`Không thể lưu bản nháp Step 1: ` + errorMsg);
           return false;
         });
       break;
@@ -97,13 +110,13 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
         })
         .catch(error => {
           const errorMsg = error.response?.data?.message || error.response?.data || error.message;
-          alert(`Không thể lưu bản nháp Step 2: ` + errorMsg);
+          showAlert(`Không thể lưu bản nháp Step 2: ` + errorMsg);
           return false;
         });
       break;
     }
 
-    case 3: {
+    case 5: {
       const mappedMain = (formData.mainPrizes || []).map(item => ({
         prizeName: item.name?.trim() || '',
         description: item.desc?.trim() || '',
@@ -128,12 +141,12 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
 
       currentPromise = axiosClient.post('/prize', step3Payload)
         .then(response => {
-          console.log(`Lưu bản nháp Step 3 thành công!`, response.data);
+          console.log(`Lưu bản nháp Step 5 thành công!`, response.data);
           return true;
         })
         .catch(error => {
           const errorMsg = error.response?.data?.message || error.response?.data || error.message;
-          alert(`Không thể lưu bản nháp Step 3: ` + errorMsg);
+          showAlert(`Không thể lưu bản nháp Step 5: ` + errorMsg);
           return false;
         });
       break;
@@ -155,7 +168,7 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
             ? (typeof item.location === 'object' ? [item.location?.name || item.location?.formatted_address].filter(Boolean).join(' - ') : (item.location || ''))
             : (item.meetingLink || ''),
           locationName: item.locationName || '',
-          locationDetail: typeof item.location === 'object' ? (item.location?.detail || '') : '',
+          detailLocation: typeof item.location === 'object' ? (item.location?.detail || '') : '',
           meetingLink: item.meetingLink || ''
           ,
           rubricId: item.rubricId ? Number(item.rubricId) : null,
@@ -195,15 +208,12 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
 
           if (Array.isArray(savedRounds)) {
             const updatedRounds = (formData.rounds || []).map((original, index) => {
-              const r = savedRounds[index];
+              // Tìm đúng vòng thi trong response theo tên (hoặc fallback index) để lấy roundId
+              const r = savedRounds.find(sr => sr.roundName === original.name) || savedRounds[index];
               if (!r) return original;
               return {
                 ...original,
                 id: r.roundId,
-                name: r.roundName,
-                startDate: parseBackendDate(r.roundStartTime),
-                endDate: parseBackendDate(r.roundEndTime),
-                submissionDeadline: parseBackendDate(r.roundSubmissionDeadline),
               };
             });
             handleFormChange('rounds', updatedRounds);
@@ -212,41 +222,43 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
         })
         .catch(error => {
           const errorMsg = error.response?.data?.message || error.response?.data || error.message;
-          alert('Không thể lưu bản nháp Step 4: ' + errorMsg);
+          showAlert('Không thể lưu bản nháp Step 4: ' + errorMsg);
           return false;
         });
       break;
     }
 
-    case 5: {
+    case 3: {
       const step5Payload = {
         eventId: formData.id,
         tracks: (formData.categories || []).map(item => ({
           name: item.name?.trim() || 'Bảng đấu mới',
           des: item.desc?.trim() || '',
-          minTeamPerTrack: 1,
+          minTeamPerTrack: Number(item.minTeam) || 5,
           maxTeamPerTrack: Number(item.teamLimit) || 10
         }))
       };
 
       currentPromise = axiosClient.post('/track', step5Payload)
         .then(response => {
-          console.log(`Lưu bản nháp Step 5 thành công!`, response.data);
+          console.log(`Lưu bản nháp Step 3 thành công!`, response.data);
           const savedTracks = response.data;
           if (Array.isArray(savedTracks)) {
-            const updatedCategories = savedTracks.map(t => ({
-              id: t.id,
-              name: t.name,
-              desc: t.des,
-              teamLimit: t.maxTeamPerTrack
-            }));
+            const updatedCategories = (formData.categories || []).map((original, index) => {
+              const t = savedTracks.find(st => st.name === original.name) || savedTracks[index];
+              if (!t) return original;
+              return {
+                ...original,
+                id: t.id ?? t.trackId,
+              };
+            });
             handleFormChange('categories', updatedCategories);
           }
           return true;
         })
         .catch(error => {
           const errorMsg = error.response?.data?.message || error.response?.data || error.message;
-          alert(`Không thể lưu bản nháp Step 5: ` + errorMsg);
+          showAlert(`Không thể lưu bản nháp Step 3: ` + errorMsg);
           return false;
         });
       break;
@@ -254,7 +266,7 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
 
     case 6: {
       if (!formData.id) {
-        alert("Không tìm thấy thông tin sự kiện gốc!");
+        showAlert("Không tìm thấy thông tin sự kiện gốc!");
         return false;
       }
 
@@ -296,7 +308,7 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
           return true;
         })
         .catch(() => {
-          alert(`Không thể lưu mốc thời gian sự kiện (Step 6)`);
+          showAlert(`Không thể lưu mốc thời gian sự kiện (Step 6)`);
           return false;
         });
       break;
@@ -305,7 +317,7 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
     case 7: {
       apiEndpoint = '/mentor-judge';
       if (!formData.id) {
-        alert("Không tìm thấy thông tin sự kiện gốc!");
+        showAlert("Không tìm thấy thông tin sự kiện gốc!");
         return false;
       }
 
@@ -328,7 +340,7 @@ export function handleSaveDraft({ currentStep, formData, axiosClient, handleForm
         })
         .catch(error => {
           const errorMsg = error.response?.data?.message || error.response?.data || error.message;
-          alert('Không thể lưu bản nháp Step 7: ' + errorMsg);
+          showAlert('Không thể lưu bản nháp Step 7: ' + errorMsg);
           return false;
         });
       break;

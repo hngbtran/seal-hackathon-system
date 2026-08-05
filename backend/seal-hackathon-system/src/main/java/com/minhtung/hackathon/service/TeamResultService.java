@@ -209,7 +209,7 @@ public class TeamResultService {
         boolean hasSubmission = false;
         if (round.getSubmissions() != null) {
             hasSubmission = round.getSubmissions().stream()
-                    .anyMatch(sub -> sub.getTeam() != null && sub.getTeam().getId()==(teamId));
+                    .anyMatch(sub -> sub.getTeam() != null && sub.getTeam().getId() == (teamId));
         }
 
         if ("UPCOMING".equals(roundStatus)) {
@@ -376,7 +376,7 @@ public class TeamResultService {
                                 .teamName(nr.getTeam().getName())
                                 .rank(nr.getRanking())
                                 .score(nr.getTotalScore())
-                                .isSelf(nr.getTeam().getId()==(team.getId()))
+                                .isSelf(nr.getTeam().getId() == (team.getId()))
                                 .build())
                         .collect(Collectors.toList());
             }
@@ -409,6 +409,7 @@ public class TeamResultService {
 
 
     //--------------------------------API getLeaderboard (Xếp hạng theo toàn Round)----------------------
+
     @Transactional
     public List<LeaderboardTeamDTO.Team> getLeaderboard(long roundId, long eventId, long currentUserId) {
 
@@ -438,16 +439,25 @@ public class TeamResultService {
                 .map(ma -> ma.getTrack().getId())
                 .collect(Collectors.toSet());
 
-        // 5.
+        // 5. Lấy danh sách TeamResult
         List<TeamResult> teamResults = teamResultRepository.findBasicFullByRoundId(roundId);
         if (!teamResults.isEmpty()) {
             teamResultRepository.fetchJudgeScoreDetailsByRoundId(roundId);
         }
 
+        // ⚡ 5.1: BỔ SUNG - Lấy Map (teamId -> submissionId) duy nhất cho Round này
+        Map<Long, Long> teamToSubmissionMap = submissionRepository.findTeamSubmissionMappingsByRoundId(roundId)
+                .stream()
+                .collect(Collectors.toMap(
+                        SubmissionRepository.TeamSubmissionMapping::getTeamId,
+                        SubmissionRepository.TeamSubmissionMapping::getSubmissionId,
+                        (existing, replacement) -> existing
+                ));
+
         // 6. Sắp xếp toàn bộ các đội trong Round theo điểm số tổng (TotalScore) giảm dần
         teamResults.sort((tr1, tr2) -> {
-            Double score1 = tr1.getTotalScore() ;
-            Double score2 = tr2.getTotalScore() ;
+            Double score1 = tr1.getTotalScore();
+            Double score2 = tr2.getTotalScore();
             return Double.compare(score2, score1);
         });
 
@@ -455,7 +465,11 @@ public class TeamResultService {
         AtomicInteger roundRank = new AtomicInteger(1);
 
         return teamResults.stream()
-                .map(tr -> toTeamDTO(tr, mentorerTrackIds, roundRank.getAndIncrement()))
+                .map(tr -> {
+                    Long teamId = tr.getTeam().getId();
+                    Long submissionId = teamToSubmissionMap.get(teamId); // Lấy submissionId tương ứng từ Map
+                    return toTeamDTO(tr, submissionId, mentorerTrackIds, roundRank.getAndIncrement());
+                })
                 .collect(Collectors.toList());
     }
 
@@ -484,7 +498,7 @@ public class TeamResultService {
     /**
      * Map dữ liệu TeamResult sang DTO với thứ hạng đã được tính lại theo Round (calculatedRank).
      */
-    private LeaderboardTeamDTO.Team toTeamDTO(TeamResult tr, Set<Long> mentorerTrackIds, int calculatedRank) {
+    private LeaderboardTeamDTO.Team toTeamDTO(TeamResult tr, Long submissionId, Set<Long> mentorerTrackIds, int calculatedRank) {
         Team team = tr.getTeam();
 
         boolean isMentorOfThisTeamTrack = team != null
@@ -493,8 +507,9 @@ public class TeamResultService {
 
         if (isMentorOfThisTeamTrack) {
             return LeaderboardTeamDTO.Team.builder()
-                    .id(team.getId())
-                    .teamName(team.getName())
+                    .id(team != null ? team.getId() : null)
+                    .submissionId(submissionId) // <--- GÁN SUBMISSION ID
+                    .teamName(team != null ? team.getName() : null)
                     .rank(calculatedRank)
                     .avgScore(tr.getTotalScore())
                     .status(null)
@@ -503,13 +518,16 @@ public class TeamResultService {
                     .build();
         }
 
-        List<LeaderboardTeamDTO.JudgeScore> judges = tr.getJudgeScores().stream()
-                .map(this::toJudgeScoreDTO)
-                .collect(Collectors.toList());
+        List<LeaderboardTeamDTO.JudgeScore> judges = tr.getJudgeScores() != null
+                ? tr.getJudgeScores().stream()
+                  .map(this::toJudgeScoreDTO)
+                  .collect(Collectors.toList())
+                : Collections.emptyList();
 
         return LeaderboardTeamDTO.Team.builder()
-                .id(team.getId())
-                .teamName(team.getName())
+                .id(team != null ? team.getId() : null)
+                .submissionId(submissionId) // <--- GÁN SUBMISSION ID
+                .teamName(team != null ? team.getName() : null)
                 .rank(calculatedRank)
                 .avgScore(tr.getTotalScore())
                 .status(tr.getStatus() != null ? tr.getStatus().name() : null)
@@ -519,15 +537,19 @@ public class TeamResultService {
     }
 
     private LeaderboardTeamDTO.JudgeScore toJudgeScoreDTO(JudgeScore js) {
-        User user = js.getJudgeAssignment().getUser();
+        User user = (js.getJudgeAssignment() != null) ? js.getJudgeAssignment().getUser() : null;
 
-        List<LeaderboardTeamDTO.CriteriaScore> criteriaScores = js.getDetails().stream()
-                .map(d -> new LeaderboardTeamDTO.CriteriaScore(d.getCriterion().getName(), d.getScore()))
-                .collect(Collectors.toList());
+        List<LeaderboardTeamDTO.CriteriaScore> criteriaScores = js.getDetails() != null
+                ? js.getDetails().stream()
+                  .map(d -> new LeaderboardTeamDTO.CriteriaScore(
+                          d.getCriterion() != null ? d.getCriterion().getName() : null,
+                          d.getScore()))
+                  .collect(Collectors.toList())
+                : Collections.emptyList();
 
         return new LeaderboardTeamDTO.JudgeScore(
-                user.getId(),
-                user.getFullName(),
+                user != null ? user.getId() : null,
+                user != null ? user.getFullName() : null,
                 js.getTotalScore(),
                 criteriaScores
         );
@@ -586,7 +608,6 @@ public class TeamResultService {
                     .build();
         }
     }
-
 
 
 }

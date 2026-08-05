@@ -26,6 +26,8 @@ function fmtCountdown(sec) {
 function PublishFlow({ stage, review, allResultsReady, blockers = [], unassignedAwardsCount = 0, onAdvance, onRollback }) {
   const timeUp = review ? review.remainingSec <= 0 : false
   const noReq = review ? review.pendingRequests === 0 : false
+  // -- Khoá nút công bố cho thí sinh khi chưa hết 30 phút rà soát --
+  // -- Để demo nhanh: chỉnh giờ hệ thống lên > 30 phút là timeUp = true ngay --
   const canPublish = timeUp && noReq && unassignedAwardsCount === 0
 
   const canAdvance = stage === 1 ? allResultsReady : stage === 2 ? canPublish : false

@@ -46,7 +46,7 @@ public class EventService {
     private final EventRegistrationRepository eventRegistrationRepository;
 
     // service view Event
-    // service lay tat ca event tất cả status lun
+// service lay tat ca event tất cả status lun
     public List<AllEventResponse> getAllEvents() {
         List<Event> eventList = eventRepository.findAll();
         List<AllEventResponse> allEventResponseList = new ArrayList<>();
@@ -61,12 +61,41 @@ public class EventService {
             eventResponse.setEventTopic(event.getTopic());
             eventResponse.setMaxTeam(event.getMaxTeam());
             eventResponse.setMaxTeamMember(event.getMaxTeamMember());
-            eventResponse.setEventLocation(event.getEventLocation());
             eventResponse.setThumbnail(event.getThumbnail_image());
+            eventResponse.setKeywords(event.getKeywords());
+            eventResponse.setRules(event.getRules());
+
             int totalTracks = event.getTracks() != null ? event.getTracks().size() : 0;
             int totalRounds = event.getRounds() != null ? event.getRounds().size() : 0;
             eventResponse.setTrackQuantity(totalTracks);
             eventResponse.setRoundQuantity(totalRounds);
+
+            // --- MAP ĐỊA ĐIỂM THEO TỪNG ROUND ---
+            if (event.getRounds() != null) {
+                List<AllEventResponse.RoundLocationItem> locations = event.getRounds().stream()
+                        .filter(r -> r.getLocationName() != null || r.getDetailLocation() != null)
+                        .map(r -> new AllEventResponse.RoundLocationItem(
+                                r.getId(),
+                                r.getName(),
+                                r.getLocationName(),
+                                r.getDetailLocation(),
+                                r.getPosition()
+                        ))
+                        .toList();
+                eventResponse.setEventLocations(locations);
+            } else {
+                eventResponse.setEventLocations(new ArrayList<>());
+            }
+
+            // --- MAP GHI CHÚ SỰ KIỆN ---
+            if (event.getNotes() != null) {
+                List<AllEventResponse.EventNoteItem> noteItems = event.getNotes().stream()
+                        .map(n -> new AllEventResponse.EventNoteItem(n.getId(), n.getTitle(), n.getDescription()))
+                        .toList();
+                eventResponse.setNotes(noteItems);
+            } else {
+                eventResponse.setNotes(new ArrayList<>());
+            }
 
             // dang hard code set prize
             List<Prize> prizes = event.getPrizes();
@@ -90,7 +119,7 @@ public class EventService {
                 // Khởi tạo danh sách tổng để gom tất cả các mốc thời gian
                 List<AllEventResponse.MilestoneItemResponse> combinedMilestones = new ArrayList<>();
 
-// 1. Map danh sách Milestones trực thuộc Event
+                // 1. Map danh sách Milestones trực thuộc Event
                 if (event.getMilestones() != null) {
                     event.getMilestones().forEach(m -> {
                         String milestoneStatus = "UPCOMING";
@@ -114,7 +143,7 @@ public class EventService {
                     });
                 }
 
-// 2. Map trực tiếp các mốc thời gian từ các ROUND thuộc Event
+                // 2. Map trực tiếp các mốc thời gian từ các ROUND thuộc Event
                 if (event.getRounds() != null) {
                     event.getRounds().forEach(r -> {
 
@@ -155,7 +184,7 @@ public class EventService {
                     });
                 }
 
-// 3. Sắp xếp toàn bộ danh sách hỗn hợp theo thứ tự thời gian tăng dần (dateStart)
+                // 3. Sắp xếp toàn bộ danh sách hỗn hợp theo thứ tự thời gian tăng dần (dateStart)
                 List<AllEventResponse.MilestoneItemResponse> sortedMilestones = combinedMilestones.stream()
                         .sorted((m1, m2) -> {
                             if (m1.getDateStart() == null && m2.getDateStart() == null) return 0;
@@ -165,13 +194,13 @@ public class EventService {
                         })
                         .toList();
 
-// 4. RESET VÀ ĐÁNH LẠI ID TUẦN TỰ CHO FRONTEND TIỆN LÀM KEY RENDER
+                // 4. RESET VÀ ĐÁNH LẠI ID TUẦN TỰ CHO FRONTEND TIỆN LÀM KEY RENDER
                 long autoIncrementId = 1;
                 for (AllEventResponse.MilestoneItemResponse item : sortedMilestones) {
                     item.setId(autoIncrementId++);
                 }
 
-// Đổ dữ liệu sạch đã sắp xếp vào object response cuối cùng
+                // Đổ dữ liệu sạch đã sắp xếp vào object response cuối cùng
                 eventResponse.setMilestones(sortedMilestones);
             } else {
                 eventResponse.setMilestones(new ArrayList<>());

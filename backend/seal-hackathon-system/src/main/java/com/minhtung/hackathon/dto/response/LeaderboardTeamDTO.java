@@ -15,6 +15,7 @@ public class LeaderboardTeamDTO {
     @NoArgsConstructor
     public static class Team {
         private Long id;
+        private Long submissionId;
         private String teamName;
         private int rank;
         private double avgScore;

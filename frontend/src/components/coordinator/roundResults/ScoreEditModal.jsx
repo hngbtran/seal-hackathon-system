@@ -21,6 +21,7 @@ import RadioCardGroup from '../../shared/RadioCardGroup'
 import TeamDetailModal from './TeamDetailModal'
 import SubmissionModal from '../../panelist/event/mentorTeamDetail/SubmissionModal'
 import JudgeScoreChart from './JudgeScoreChart'
+import axiosClient from '../../../api/axiosClient'
 import styles from './ScoreEditModal.module.css'
 
 // Hai lựa chọn quyết định của BTC
@@ -59,10 +60,12 @@ const mockTeam = { rank: 0, score: 0, team: { id: '', name: '' } }
  *   data            : object (shape như mockScoreEditData)
  *   onOpenTeam      : (teamId) => void  (optional)
  *   onOpenSubmission: (teamId) => void  (optional)
+ *   onHandled       : () => void  (optional, gọi sau khi duyệt/từ chối thành công)
  */
-function ScoreEditModal({ isOpen, onClose, data, onOpenTeam, onOpenSubmission }) {
+function ScoreEditModal({ isOpen, onClose, data, onOpenTeam, onOpenSubmission, onHandled }) {
   const [action, setAction] = useState('approve')
   const [note, setNote] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   const [teamDetailOpen, setTeamDetailOpen] = useState(false)
   const [submissionOpen, setSubmissionOpen] = useState(false)
 
@@ -99,15 +102,33 @@ function ScoreEditModal({ isOpen, onClose, data, onOpenTeam, onOpenSubmission })
     else setSubmissionOpen(true)
   }
 
+  // Gửi quyết định duyệt/từ chối lên BE
+  const handleConfirm = async () => {
+    if (!note.trim() || submitting) return
+    setSubmitting(true)
+    try {
+      await axiosClient.put(`/system-requests/score-edits/${data.id}`, {
+        action, // 'approve' | 'reject'
+        note,
+      })
+      if (onHandled) onHandled()
+      onClose()
+    } catch (err) {
+      console.error('Lỗi khi xử lý yêu cầu chỉnh điểm:', err)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   const footer = (
     <div className={styles.footerContainer}>
-      <Button label="Hủy" variant="outline" color="blue" onClick={onClose} />
+      <Button label="Hủy" variant="outline" color="blue" onClick={onClose} disabled={submitting} />
       <Button
-        label="Xác nhận quyết định"
+        label={submitting ? 'Đang xử lý...' : 'Xác nhận quyết định'}
         variant="primary"
         color="blue"
-        onClick={onClose}
-        disabled={!note.trim()}
+        onClick={handleConfirm}
+        disabled={!note.trim() || submitting}
       />
     </div>
   )
@@ -295,10 +316,10 @@ function ScoreEditModal({ isOpen, onClose, data, onOpenTeam, onOpenSubmission })
                     <span className={styles.impactScoreNum}>{impact.before.teamScore.toFixed(2)}</span>
                     <span className={styles.impactScoreDesc}>Điểm đội</span>
                   </div>
-                  <div className={styles.impactDivider} />
+                  {/* <div className={styles.impactDivider} /> */}
                   <div className={styles.impactScore}>
-                    <span className={styles.impactScoreNum}>#{impact.before.teamRank}</span>
-                    <span className={styles.impactScoreDesc}>Xếp hạng</span>
+                    {/* <span className={styles.impactScoreNum}>#{impact.before.teamRank}</span>
+                    <span className={styles.impactScoreDesc}>Xếp hạng</span> */}
                   </div>
                 </div>
               </div>
@@ -322,9 +343,9 @@ function ScoreEditModal({ isOpen, onClose, data, onOpenTeam, onOpenSubmission })
                     </span>
                     <span className={styles.impactScoreDesc}>Điểm đội</span>
                   </div>
-                  <div className={styles.impactDivider} />
+                  {/* <div className={styles.impactDivider} /> */}
                   <div className={styles.impactScore}>
-                    <span
+                    {/* <span
                       className={`${styles.impactScoreNum} ${
                         rankBetter ? styles.impactNumGreen : styles.impactNumOrange
                       }`}
@@ -333,7 +354,7 @@ function ScoreEditModal({ isOpen, onClose, data, onOpenTeam, onOpenSubmission })
                       {rankChanged && (
                         <RankIcon size={16} weight="bold" style={{ marginLeft: '0.2em' }} />
                       )}
-                    </span>
+                    </span> */}
                     <span className={styles.impactScoreDesc}>Xếp hạng</span>
                   </div>
                 </div>

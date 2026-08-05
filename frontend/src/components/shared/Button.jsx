@@ -14,6 +14,7 @@ function Button({
     onClick,
     disabled = false,
     type = 'button',
+    title
 }) {
     return (
         <button
@@ -21,6 +22,7 @@ function Button({
             className={`${styles.btn} ${styles[variant]} ${styles[color]} ${className}`}
             onClick={onClick}
             disabled={disabled}
+            title={title}
         >
             
 

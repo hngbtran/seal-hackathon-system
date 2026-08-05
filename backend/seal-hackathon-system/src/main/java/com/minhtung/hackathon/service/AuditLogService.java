@@ -121,7 +121,8 @@ public class AuditLogService {
         } else if (log.getAction() == AuditAction.FLAGGED) {
             type = "flagged";
             actionText = "gắn cờ vi phạm";
-        } else {
+        }
+        else {
             type = log.getAction().name().toLowerCase();
             actionText = "đã thực hiện thao tác";
         }

@@ -1,12 +1,21 @@
 import { FlagBanner, RocketLaunch, ArrowLeft, Eye } from '@phosphor-icons/react'
-import Button from '../.../../../../shared/Button'
+import Button from '../../../../components/shared/Button'
+import Tooltip from '../../../../components/shared/Tooltip'
 import StatusBadge from '../../StatusBadge'
 import styles from './CreateEventHeader.module.css'
 import { useNavigate } from 'react-router-dom'
 // status: 'draft' | 'live' | 'upcoming' | 'ended' | 'cancelled' | 'archived'
 // Công bố chỉ enabled khi status === 'draft'
-function CreateEventHeader({ title, status = 'draft', onBack, onPublish, onPreview , isPublishDisabled }) {
+function CreateEventHeader({ title, status = 'draft', onBack, onPublish, onPreview , isPublishDisabled, publishDisabledReason }) {
   const navigate=useNavigate();
+
+  let tooltipContent = null;
+  if (status !== 'draft') {
+    tooltipContent = "Sự kiện đã được công bố";
+  } else if (publishDisabledReason) {
+    tooltipContent = publishDisabledReason;
+  }
+
   return (
     <div className={styles.outer}>
 
@@ -29,15 +38,22 @@ function CreateEventHeader({ title, status = 'draft', onBack, onPublish, onPrevi
             variant="outline"
             onClick={onPreview}
           />
-          <Button
-            label="Công bố"
-            icon={RocketLaunch}
-            iconPosition="left"
-            variant="primary"
-            color="green"
-            onClick={onPublish}
-            disabled={status !== 'draft' || isPublishDisabled}
-          />
+          <Tooltip 
+            content={tooltipContent} 
+            position="bottom" 
+            bgColor="white"
+            textColor="blueTxt"
+          >
+            <Button
+              label="Công bố"
+              icon={RocketLaunch}
+              iconPosition="left"
+              variant="primary"
+              color="green"
+              onClick={onPublish}
+              disabled={status !== 'draft' || isPublishDisabled}
+            />
+          </Tooltip>
         </div>
 
       </div>

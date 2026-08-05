@@ -18,6 +18,11 @@ import axiosClient from '../../../../../api/axiosClient'
 
 const WINDOW_SEC = 30 * 60
 
+// -- Key localStorage để lưu thời điểm BTC bắt đầu Stage 2 --
+const stage2Key = (roundId) => `stage2_start_${roundId}`
+// -- Key localStorage để lưu stage hiện tại (nguồn sự thật cho UI) --
+const stageKey = (roundId) => `round_stage_${roundId}`
+
 // ---- Helpers tinh toan xep hang ----
 const mean = (arr) => arr.reduce((s, n) => s + n, 0) / arr.length
 const round2 = (n) => Math.round(n * 100) / 100
@@ -228,31 +233,37 @@ function ResultsTab() {
         // 3. Update state
         setRoundResult(data)
 
-        // 2. [BỔ SUNG] Khôi phục Stage từ trường data.publishStage trong JSON vừa nhận
+        // [BỔ SUNG] Khôi phục Stage từ localStorage trước, fallback sang backendStage
+        // Lý do: backend trả publishStage=1 khi category='all' (lỗi backend), localStorage mới là nguồn đúng
         if (data) {
           const backendStage = data.publishStage || 1;
+          const localStage = parseInt(localStorage.getItem(stageKey(roundId)), 10) || 0;
+          // Dùng localStage nếu có, nếu không thì fallback sang backendStage
+          const effectiveStage = localStage > 0 ? localStage : backendStage;
 
-          // Khôi phục Stage hiển thị nút bấm (Dùng Key [roundId] theo hàm gốc của bạn)
           setStageByRound((p) => ({
             ...p,
-            [roundId]: backendStage
+            [roundId]: effectiveStage
           }));
 
-          // Khôi phục lại hộp đếm ngược thời gian nếu đang ở Stage 2
-          if (backendStage === 2) {
+          // Khôi phục reviewOverride nếu đang ở Stage 2
+          if (effectiveStage === 2) {
+            // Đọc thời điểm bắt đầu Stage 2 từ localStorage để tính đúng thời gian còn lại
+            const startTime = parseInt(localStorage.getItem(stage2Key(roundId)), 10)
+            const elapsed = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0
+            const remaining = Math.max(0, WINDOW_SEC - elapsed)
             setReviewOverride((rp) => ({
               ...rp,
               [roundId]: {
-                remainingSec: WINDOW_SEC,
+                remainingSec: remaining,
                 durationMin: 30,
                 pendingRequests: 0,
-                // Đếm số lượng giám khảo từ mảng data.judges có trong JSON
                 judgesAgreed: data.judges ? data.judges.length : 0,
                 judgesTotal: data.judges ? data.judges.length : 0
               },
             }));
           } else {
-            // Nếu ở Stage 1 hoặc 3 thì xóa đi để ẩn đồng hồ đếm ngược
+            // Stage 1 hoặc 3: ẩn đồng hồ đếm ngược
             setReviewOverride((rp) => {
               const updated = { ...rp };
               delete updated[roundId];
@@ -288,13 +299,18 @@ function ResultsTab() {
   }, [eventId])
 
   // -- Dem nguoc cua so phan hoi 30 phut khi dang o giai doan 2 --
+  // -- Tính remainingSec từ Date.now() - startTime: chỉnh giờ hệ thống là đồng hồ cập nhật ngay --
   useEffect(() => {
     if (isAll || stage !== 2 || !review) return
     const id = setInterval(() => {
+      const startTime = parseInt(localStorage.getItem(stage2Key(roundId)), 10)
+      if (!startTime) return
+      const elapsed = Math.floor((Date.now() - startTime) / 1000)
+      const remaining = Math.max(0, WINDOW_SEC - elapsed)
       setReviewOverride((prev) => {
         const cur = prev[roundId] || review
-        if (!cur || cur.remainingSec <= 0) return prev
-        return { ...prev, [roundId]: { ...cur, remainingSec: cur.remainingSec - 1 } }
+        if (!cur) return prev
+        return { ...prev, [roundId]: { ...cur, remainingSec: remaining } }
       })
     }, 1000)
     return () => clearInterval(id)
@@ -351,6 +367,10 @@ function ResultsTab() {
         const next = (p[roundId] || 1) + 1;
 
         if ((p[roundId] || 1) === 1) {
+          // Lưu thời điểm BTC bấm "Mở cho giám khảo" vào localStorage
+          // Đồng hồ sẽ tính dựa trên Date.now() - startTime, nên chỉnh giờ máy là đồng hồ chạy đúng
+          const startTime = Date.now()
+          localStorage.setItem(stage2Key(roundId), String(startTime))
           setReviewOverride((rp) => ({
             ...rp,
             [roundId]: {
@@ -363,7 +383,10 @@ function ResultsTab() {
           }));
         }
 
-        return { ...p, [roundId]: Math.min(3, next) };
+        const newStage = Math.min(3, next);
+        // Lưu stage mới vào localStorage để persist qua reload
+        localStorage.setItem(stageKey(roundId), String(newStage))
+        return { ...p, [roundId]: newStage };
       });
 
     } catch (error) {
@@ -385,10 +408,19 @@ function ResultsTab() {
 
       setStageByRound((p) => {
         const prev = (p[roundId] || 1) - 1;
-        return { ...p, [roundId]: Math.max(1, prev) };
+        const newStage = Math.max(1, prev);
+        // Cập nhật localStorage: nếu về stage 1 thì xóa, còn lại thì lưu giá trị mới
+        if (newStage === 1) {
+          localStorage.removeItem(stageKey(roundId))
+        } else {
+          localStorage.setItem(stageKey(roundId), String(newStage))
+        }
+        return { ...p, [roundId]: newStage };
       });
 
       if (prevStage === 1) {
+        // Xóa startTime khỏi localStorage khi rollback về Stage 1
+        localStorage.removeItem(stage2Key(roundId))
         setReviewOverride((rp) => {
           const updated = { ...rp };
           delete updated[roundId];
