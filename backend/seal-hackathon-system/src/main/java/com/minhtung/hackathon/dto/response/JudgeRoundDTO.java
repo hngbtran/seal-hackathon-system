@@ -17,6 +17,7 @@ public class JudgeRoundDTO {
     private int submissionQuantity;
     private int scoredQuantity;
     private boolean allCategories;
+    private String lifecycle; // "upcoming", "active", "ended"
 
     private List<String> categories;
 }

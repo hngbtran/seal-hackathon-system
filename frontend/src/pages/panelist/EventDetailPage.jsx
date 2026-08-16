@@ -60,7 +60,7 @@ function EventDetailPage() {
                 id: String(r.roundId),
                 name: r.name,
                 ordinal: r.roundId,
-                lifecycle: r.status?.toLowerCase() === 'in_progress' ? 'active' : (r.status?.toLowerCase() || 'active'),
+                lifecycle: r.lifecycle,
                 assigned: true,
                 allCategories: r.allCategories,
                 categories: r.categories || [],

@@ -401,6 +401,7 @@ public class MentorJudgeService {
                     .timeEnd(round.getTimeEnd())
                     .submissionQuantity(submissionQuantity)
                     .scoredQuantity(scoredQuantity)
+                    .lifecycle(resolveLifecycle(round.getTimeStart(), round.getTimeEnd()))
                     .build();
         }).collect(Collectors.toList());
 
@@ -610,5 +611,20 @@ public class MentorJudgeService {
                             .build();
                 })
                 .collect(Collectors.toList());
+    }
+
+    private String resolveLifecycle(LocalDateTime timeStart, LocalDateTime timeEnd) {
+        LocalDateTime now = LocalDateTime.now();
+
+        if (timeStart == null || timeEnd == null) {
+            return "upcoming";
+        }
+        if (now.isBefore(timeStart)) {
+            return "upcoming";
+        }
+        if (now.isAfter(timeEnd)) {
+            return "ended";
+        }
+        return "active";
     }
 }
