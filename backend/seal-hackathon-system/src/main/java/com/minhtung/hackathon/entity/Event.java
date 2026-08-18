@@ -97,7 +97,7 @@ public class Event {
     private List<Track> tracks = new ArrayList<>();
 
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<EventNote> notes; // những lưu ý của event
+    private List<EventNote> notes = new ArrayList<>(); // những lưu ý của event
 
 
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)

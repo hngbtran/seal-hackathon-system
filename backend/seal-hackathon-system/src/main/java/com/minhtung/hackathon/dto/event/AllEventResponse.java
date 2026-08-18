@@ -22,13 +22,15 @@ public class AllEventResponse {
     private int teamQuantity=0;
     private int trackQuantity=0;
     private int candidateQuantity=0;
-    private String eventLocation;
+    private List<RoundLocationItem> eventLocations; // đổi từ String -> List, mỗi round 1 địa điểm
     private long prize;
     private String eventStatus;
     private int roundQuantity=0;
     private String description;
     private String thumbnail;
-    // --- THÊM: Danh sách các mốc thời gian của sự kiện ---
+    private String[] keywords;
+    private String rules;
+    private List<EventNoteItem> notes;
     private List<MilestoneItemResponse> milestones;
 
     @AllArgsConstructor
@@ -42,5 +44,27 @@ public class AllEventResponse {
         private LocalDateTime dateEnd;
         private String des;
         private String status; // UPCOMING, IN_PROGRESS, COMPLETED...
+    }
+
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Getter
+    @Setter
+    public static class RoundLocationItem {
+        private long roundId;
+        private String roundName;
+        private String locationName;
+        private String detailLocation;
+        private String position;
+    }
+
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Getter
+    @Setter
+    public static class EventNoteItem {
+        private long id;
+        private String title;
+        private String description;
     }
 }
