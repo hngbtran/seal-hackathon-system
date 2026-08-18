@@ -63,4 +63,7 @@ public interface SystemRequestRepository extends JpaRepository<SystemRequest, Lo
             "AND r.status = com.minhtung.hackathon.entity.SystemRequest.RequestStatus.ACCEPTED " +
             "ORDER BY r.createdAt DESC")
     List<SystemRequest> findLatestBanRequestByTeamId(@Param("teamId") long teamId);
+
+
+
 }

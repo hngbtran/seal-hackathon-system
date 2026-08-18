@@ -1,7 +1,9 @@
 package com.minhtung.hackathon.controller;
 
+import com.minhtung.hackathon.dto.request.HandleScoreEditRequestDto;
 import com.minhtung.hackathon.dto.request.HandleViolationRequestDto;
 import com.minhtung.hackathon.dto.request.ScoreEditRequestDto;
+import com.minhtung.hackathon.dto.response.ScoreEditDetailResponse;
 import com.minhtung.hackathon.dto.response.ViewTeamListRespone;
 import com.minhtung.hackathon.repository.UserRepository;
 import com.minhtung.hackathon.security.JwtUtil;
@@ -23,7 +25,7 @@ import java.util.Map;
 public class SystemRequestController {
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
-    private final TeamService teamService ;
+    private final TeamService teamService;
     private final SystemRequestService systemRequestService;
 
     // API Lấy danh sách báo cáo vi phạm
@@ -63,7 +65,33 @@ public class SystemRequestController {
     }
 
 
+    // API Lấy danh sách tóm tắt Yêu cầu chỉnh sửa điểm
+    @GetMapping("/score-edits")
+    public ResponseEntity<?> getScoreEditRequests() {
+        return ResponseEntity.ok(systemRequestService.getPendingScoreEditRequests());
+    }
 
+
+    // lay getScoreEditDetail
+    @GetMapping("/score-edits/{id}")
+    public ResponseEntity<ScoreEditDetailResponse> getScoreEditDetail(@PathVariable Long id) {
+        return ResponseEntity.ok(systemRequestService.getScoreEditRequestDetail(id));
+    }
+
+
+    @PutMapping("/score-edits/{id}")
+    public ResponseEntity<?> handleScoreEdit(
+            @PathVariable Long id,
+            @RequestBody HandleScoreEditRequestDto dto,
+            @RequestHeader("Authorization") String auth
+    ) {
+        Integer uid = getUid(auth);
+        if (uid == null) {
+            return unauthorized();
+        }
+        systemRequestService.handleScoreEditRequest(id, dto, uid.longValue());
+        return ResponseEntity.ok().build();
+    }
 
 
     private Integer getUid(String authHeader) {
