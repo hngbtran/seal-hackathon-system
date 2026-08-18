@@ -1,6 +1,7 @@
 package com.minhtung.hackathon.service;
 
 import com.minhtung.hackathon.dto.request.HandleViolationRequestDto;
+import com.minhtung.hackathon.dto.request.ScoreEditRequestDto;
 import com.minhtung.hackathon.dto.response.ViolationResponseDto;
 import com.minhtung.hackathon.entity.*;
 import com.minhtung.hackathon.enums.TeamStatus;
@@ -21,6 +22,10 @@ public class SystemRequestService {
     private final SystemRequestRepository systemRequestRepository;
     private final TeamResultRepository teamResultRepository;
     private final TeamRepository teamRepository;
+    private final UserRepository userRepository;
+    private final JudgeScoreRepository judgeScoreRepository;
+    private final  CriterionRepository criterionRepository;
+
     public List<ViolationResponseDto> getPendingViolations() {
         List<SystemRequest> requests = systemRequestRepository.findByTypeAndStatus(
                 SystemRequest.RequestType.FLAG_VIOLATION,
@@ -102,4 +107,55 @@ public class SystemRequestService {
             teamResultRepository.save(teamResult);
         }
     }
+
+
+
+    /**
+     * 1. GIÁM KHẢO GỬI YÊU CẦU SỬA ĐIỂM
+     */
+    @Transactional
+    public void createScoreEditRequest(long userId, ScoreEditRequestDto dto) {
+        User judge = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin Giám khảo"));
+
+        // Tìm bảng điểm gốc của giám khảo này cho bài submissionId
+        JudgeScore judgeScore = judgeScoreRepository
+                .findBySubmissionIdAndJudgeAssignment_User_Id(dto.getSubmissionId(), judge.getId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy bảng điểm chính thức của giám khảo cho bài thi này"));
+
+        // Tạo SystemRequest (Phần Vỏ)
+        SystemRequest request = new SystemRequest();
+        request.setSender(judge);
+        request.setReferenceId(judgeScore.getId()); // Lưu ID của JudgeScore gốc
+        request.setReferenceType(SystemRequest.ReferenceType.JUDGE_SCORE);
+        request.setType(SystemRequest.RequestType.SCORE_EDIT_REQUEST);
+        request.setStatus(SystemRequest.RequestStatus.PENDING);
+        request.setMessage(dto.getReason()); // Lý do xin sửa điểm
+
+        // Nhận xét tổng thể mới truyền từ FE (lưu tạm vào handleMessage hoặc 1 field tạm)
+        request.setHandleMessage(dto.getComment());
+        request.setSentAt(LocalDateTime.now());
+
+        // Map danh sách các tiêu chí bị lệch cần sửa (Phần Ruột)
+        if (dto.getDetails() != null && !dto.getDetails().isEmpty()) {
+            List<ScoreEditRequestDetail> details = dto.getDetails().stream().map(dDto -> {
+                Criterion criterion = criterionRepository.findById(dDto.getCriterionId())
+                        .orElseThrow(() -> new RuntimeException("Không tìm thấy tiêu chí có ID: " + dDto.getCriterionId()));
+
+                ScoreEditRequestDetail detail = new ScoreEditRequestDetail();
+                detail.setSystemRequest(request);
+                detail.setCriterion(criterion);
+                detail.setNewScore(dDto.getScore());
+                detail.setNewComment(dDto.getComment());
+                return detail;
+            }).collect(Collectors.toList());
+
+            request.setScoreEditDetails(details);
+        }
+
+        // Lưu toàn bộ request (Cascade.ALL sẽ tự lưu các chi tiết ScoreEditRequestDetail)
+        systemRequestRepository.save(request);
+    }
+
+
 }

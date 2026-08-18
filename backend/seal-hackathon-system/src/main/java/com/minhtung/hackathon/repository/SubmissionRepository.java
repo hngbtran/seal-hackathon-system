@@ -59,4 +59,16 @@ ORDER BY s.submittedAt DESC
     List<Submission>findByRoundIdAndLatestTrueOrderBySubmittedAtDesc(Long roundId);
 
     Optional<Submission> findByTeam_IdAndRound_IdAndLatestTrue(long teamId, long roundId);
+
+
+
+    public interface TeamSubmissionMapping {
+        Long getTeamId();
+        Long getSubmissionId();
+    }
+
+    @Query("SELECT s.team.id AS teamId, s.id AS submissionId " +
+            "FROM Submission s " +
+            "WHERE s.round.id = :roundId")
+    List<TeamSubmissionMapping> findTeamSubmissionMappingsByRoundId(@Param("roundId") long roundId);
 }

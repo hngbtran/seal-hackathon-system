@@ -65,7 +65,7 @@ function JudgeScoringPage() {
 
         let subListData, roundsList;
 
-        if (!USE_MOCK_DATA) {
+        if (USE_MOCK_DATA) {
           await new Promise(resolve => setTimeout(resolve, 500));
           subListData = {
             teamName: "FPT.O-H",
@@ -89,7 +89,7 @@ function JudgeScoringPage() {
         } else {
           //  1. GỌI SONG SONG 2 API: Chi tiết bài nộp và Danh sách vòng thi của Sự kiện
           const [submissionRes, eventRoundsRes] = await Promise.all([
-            axiosClient.get(`submission/${submissionId}`),
+            axiosClient.get(`/submission/${submissionId}`),
             axiosClient.get(`/round/rounds/${roundId}`)
           ]);
           subListData = submissionRes.data;
@@ -148,7 +148,7 @@ function JudgeScoringPage() {
           setRubric({
             name: currentRoundData.roundName || 'Tiêu chí chấm thi',
             criteria: currentRoundData.criteria.map(c => ({
-              id: String(c.id),
+              id: c.id,
               name: c.name,
               description: c.description,
               points: 10,                 // Hệ điểm tối đa 10 cho thanh kéo điểm (Slider) tương thích cấu hình maxRange=10
@@ -168,7 +168,7 @@ function JudgeScoringPage() {
               submittedAt: subData.scoringStatus === 'SUBMITTED' ? subData.scoredAt : null
             },
             hasDiscrepancy: false,
-            discrepantCriteriaIds: subData.discrepantCriteriaIds || []
+            discrepantCriteriaIds: (subData.discrepantCriteriaIds || []).map(Number)
           });
         } else {
           // Fallback object trống an toàn phòng thủ lỗi undefined properties ở ScoringPanel khi đội thi chưa được chấm
@@ -282,7 +282,7 @@ function JudgeScoringPage() {
         reason: reason
       };
 
-      await axiosClient.post(`/api/v1/panelist/submissions/${submissionId}/request-edit`, backendPayload);
+      await axiosClient.post(`/system-requests/${submissionId}/request-edit`, backendPayload);
       addToast({ variant: 'success', title: 'Thành công', message: 'Yêu cầu đã được gửi thành công, vui lòng chờ BTC duyệt.' });
       setIsRequestEditModalOpen(false);
       setIsReScoringMode(false);

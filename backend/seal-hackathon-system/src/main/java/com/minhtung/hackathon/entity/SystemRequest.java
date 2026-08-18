@@ -3,6 +3,8 @@
     import jakarta.persistence.*;
     import lombok.Data;
     import java.time.LocalDateTime;
+    import java.util.ArrayList;
+    import java.util.List;
 
     @Entity
     @Table(name = "system_request")
@@ -42,13 +44,17 @@
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
 
+        @OneToMany(mappedBy = "systemRequest", cascade = CascadeType.ALL, orphanRemoval = true)
+        private List<ScoreEditRequestDetail> scoreEditDetails = new ArrayList<>();
+
+
         @PrePersist
         void onCreate() { this.createdAt = LocalDateTime.now(); this.updatedAt = LocalDateTime.now(); }
 
         @PreUpdate
         void onUpdate() { this.updatedAt = LocalDateTime.now(); }
 
-        public enum ReferenceType { EVENT, TEAM,SUBMISSION }
-        public enum RequestType   { MENTOR_INVITE, JUDGE_INVITE,FLAG_VIOLATION }
+        public enum ReferenceType { EVENT, TEAM,SUBMISSION,JUDGE_SCORE }
+        public enum RequestType   { MENTOR_INVITE, JUDGE_INVITE,FLAG_VIOLATION,SCORE_EDIT_REQUEST }
         public enum RequestStatus { PENDING, SENT, ACCEPTED, REJECTED,WITHDRAW,RESOLVED,CANCELLED }
     }

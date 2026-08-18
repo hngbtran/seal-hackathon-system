@@ -18,9 +18,7 @@ import org.springframework.util.unit.DataSize;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -276,8 +274,15 @@ public class SubmissionService {
             }
         }
 
-        // Truyền cả 2 vào hàm mapper đã cập nhật ở trên
-        return mapToDetailResponse(submission, judgeScoreOpt);
+        //  Lấy toàn bộ điểm CHÍNH THỨC (tất cả giám khảo) của bài nộp này để tính lệch chuẩn
+        List<JudgeScore> officialScores = judgeScoreRepository.findBySubmissionIdAndStatus(
+                submission.getId(), JudgeScoreStatus.SUBMITTED);
+
+        List<Long> discrepantCriteriaIds = calculateDiscrepantCriteriaIds(submission.getRound(), officialScores);
+
+        return mapToDetailResponse(submission, judgeScoreOpt, discrepantCriteriaIds);
+
+
     }
 
     @Transactional
@@ -379,7 +384,7 @@ public class SubmissionService {
 
 
 
-    private SubmissionDetailResponseid mapToDetailResponse(Submission submission, Optional<JudgeScore> judgeScoreOpt) {
+    private SubmissionDetailResponseid mapToDetailResponse(Submission submission, Optional<JudgeScore> judgeScoreOpt, List<Long> discrepantCriteriaIds) {
         // 1. Chuyển đổi danh sách Entity thành viên của Team sang MemberResponse DTO
         List<SubmissionDetailResponseid.MemberResponse> memberDTOs = null;
 
@@ -411,7 +416,11 @@ public class SubmissionService {
                 .documentUrl(submission.getDocumentUrl())
                 .submittedAt(submission.getSubmittedAt())
                 .latest(submission.isLatest())
-                .members(memberDTOs);
+                .members(memberDTOs)
+                //  Danh sách ID tiêu chí bị lệch chuẩn — luôn set, mặc định [] nếu null
+                .discrepantCriteriaIds(
+                        discrepantCriteriaIds != null ? discrepantCriteriaIds : new ArrayList<>()
+                );
 
         //  THỰC HIỆN BÓC TÁCH ĐIỂM CŨ (Nếu giám khảo đã từng Lưu nháp hoặc Chấm điểm bài này)
         if (judgeScoreOpt != null && judgeScoreOpt.isPresent()) {
@@ -684,5 +693,70 @@ public class SubmissionService {
                     AuditAction.FLAGGED
             );
         }
+    }
+
+
+    /**
+     * Trả về danh sách criterionId bị lệch chuẩn (vượt ngưỡng % so với ScoringTemplate).
+     * Trả về [] nếu không có tiêu chí nào lệch hoặc không có config ngưỡng.
+     */
+    private List<Long> calculateDiscrepantCriteriaIds(Round round, List<JudgeScore> officialScores) {
+        List<Long> result = new ArrayList<>();
+
+        ScoringTemplate scoringTemplate = round.getScoringTemplate();
+        if (scoringTemplate == null) {
+            return result; // Không có config ngưỡng -> không lệch
+        }
+
+        double thresholdPercent = scoringTemplate.getStandardDeviation();
+
+        Map<Long, List<Double>> scoresByCriterion = new HashMap<>();
+        Map<Long, Integer> maxScoreByCriterion = new HashMap<>();
+
+        for (JudgeScore score : officialScores) {
+            if (score.getDetails() == null) continue;
+
+            for (JudgeScoreDetail detail : score.getDetails()) {
+                Criterion criterion = detail.getCriterion();
+                if (criterion == null) continue;
+
+                Long criterionId = criterion.getId();
+                scoresByCriterion
+                        .computeIfAbsent(criterionId, k -> new ArrayList<>())
+                        .add(detail.getScore());
+
+                maxScoreByCriterion.putIfAbsent(criterionId, criterion.getMaxRange());
+            }
+        }
+
+        for (Map.Entry<Long, List<Double>> entry : scoresByCriterion.entrySet()) {
+            List<Double> scores = entry.getValue();
+
+            if (scores.size() < 2) continue;
+
+            double mean = scores.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+
+            double variance = scores.stream()
+                    .mapToDouble(s -> Math.pow(s - mean, 2))
+                    .sum() / scores.size();
+
+            double stdDev = Math.sqrt(variance);
+
+            double maxScore = maxScoreByCriterion.getOrDefault(entry.getKey(), 10);
+            double threshold = (thresholdPercent / 100.0) * maxScore;
+
+            if (stdDev > threshold) {
+                result.add(entry.getKey()); // KHÔNG return sớm nữa, phải gom hết
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     calculateHasDiscrepancy
+     */
+    private boolean calculateHasDiscrepancy(Round round, List<JudgeScore> officialScores) {
+        return !calculateDiscrepantCriteriaIds(round, officialScores).isEmpty();
     }
 }

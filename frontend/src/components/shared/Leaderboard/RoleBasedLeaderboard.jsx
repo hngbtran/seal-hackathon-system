@@ -333,7 +333,7 @@ function RoleBasedLeaderboard({ data = [], role = 'TEAM', stage = 1, currentJudg
                                 size="sm"
                                 icon={PencilSimple}
                                 style={{ padding: '0.4em 0.7em', fontSize: '0.85rem' }}
-                                onClick={() => onRequestEdit?.(row.id)}
+                                onClick={() => onRequestEdit?.(row.submissionId)}
                               />
                             )}
                           </div>

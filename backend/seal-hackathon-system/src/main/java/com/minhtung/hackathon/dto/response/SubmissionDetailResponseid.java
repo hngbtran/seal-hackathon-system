@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -39,6 +40,10 @@ public class SubmissionDetailResponseid {
     // Map chứa nhận xét chi tiết từng tiêu chí: Key = criterionId, Value = lời nhắn
     // Ví dụ: { "1": "Ý tưởng tốt", "2": "Cần hoàn thiện code" }
     private Map<String, String> notes;
+
+
+    @Builder.Default
+    private List<Long> discrepantCriteriaIds = new ArrayList<>();
 
     @Data
     @Builder
